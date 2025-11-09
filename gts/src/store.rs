@@ -17,6 +17,10 @@ pub enum StoreError {
     EntityNotFound(String),
     #[error("Can't determine JSON schema ID for instance with GTS ID '{0}'")]
     SchemaForInstanceNotFound(String),
+    #[error(
+        "Cannot cast from schema ID '{0}'. The from_id must be an instance (not ending with '~')"
+    )]
+    CastFromSchemaNotAllowed(String),
     #[error("Entity must have a valid gts_id")]
     InvalidEntity,
     #[error("Schema type_id must end with '~'")]
@@ -259,6 +263,10 @@ impl GtsStore {
             .get(from_id)
             .ok_or_else(|| StoreError::EntityNotFound(from_id.to_string()))?
             .clone();
+
+        if from_entity.is_schema {
+            return Err(StoreError::CastFromSchemaNotAllowed(from_id.to_string()));
+        }
 
         let to_schema = self
             .get(target_schema_id)

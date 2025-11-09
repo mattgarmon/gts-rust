@@ -150,7 +150,10 @@ impl GtsFileReader {
                             );
                             entities.push(entity);
                         } else {
-                            tracing::debug!("- skipped entity from {:?} (no valid GTS ID)", file_path);
+                            tracing::debug!(
+                                "- skipped entity from {:?} (no valid GTS ID)",
+                                file_path
+                            );
                         }
                     }
                 } else {
@@ -172,7 +175,11 @@ impl GtsFileReader {
                         );
                         entities.push(entity);
                     } else {
-                        tracing::debug!("- skipped entity from {:?} (no valid GTS ID found in content: {:?})", file_path, content);
+                        tracing::debug!(
+                            "- skipped entity from {:?} (no valid GTS ID found in content: {:?})",
+                            file_path,
+                            content
+                        );
                     }
                 }
             }

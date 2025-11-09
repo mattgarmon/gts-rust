@@ -154,7 +154,7 @@ mod tests {
         // Test invalid segment with special characters
         let result = GtsIdSegment::new(0, 0, "invalid-segment");
         assert!(result.is_err());
-        
+
         // Test valid segment
         let result = GtsIdSegment::new(0, 0, "x.core.events.event.v1");
         assert!(result.is_ok());
@@ -218,11 +218,11 @@ mod tests {
         assert!(result.is_err());
     }
 
-
     #[test]
     fn test_split_at_path_multiple_at_signs() {
         // Should only split at first @
-        let (gts, path) = GtsID::split_at_path("gts.x.core.events.event.v1~@field@subfield").unwrap();
+        let (gts, path) =
+            GtsID::split_at_path("gts.x.core.events.event.v1~@field@subfield").unwrap();
         assert_eq!(gts, "gts.x.core.events.event.v1~");
         assert_eq!(path, Some("field@subfield".to_string()));
     }
@@ -257,7 +257,7 @@ mod tests {
         // Wildcard in middle should fail
         let result1 = GtsWildcard::new("gts.*.core.events.event.v1~");
         assert!(result1.is_err());
-        
+
         // Wildcard at end should work
         let pattern2 = GtsWildcard::new("gts.x.core.events.*").unwrap();
         let id2 = GtsID::new("gts.x.core.events.event.v1~").unwrap();
