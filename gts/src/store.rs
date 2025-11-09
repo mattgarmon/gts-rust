@@ -17,7 +17,9 @@ pub enum StoreError {
     EntityNotFound(String),
     #[error("Can't determine JSON schema ID for instance with GTS ID '{0}'")]
     SchemaForInstanceNotFound(String),
-    #[error("Cannot cast from schema ID '{0}'. The from_id must be an instance (not ending with '~')")]
+    #[error(
+        "Cannot cast from schema ID '{0}'. The from_id must be an instance (not ending with '~')"
+    )]
     CastFromSchemaNotAllowed(String),
     #[error("Entity must have a valid gts_id")]
     InvalidEntity,

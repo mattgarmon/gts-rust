@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use crate::entities::{GtsConfig, GtsEntity};
     use crate::store::*;
-    use crate::entities::{GtsEntity, GtsConfig};
     use serde_json::json;
 
     #[test]
@@ -25,10 +25,7 @@ mod tests {
             error: String::new(),
             count: 2,
             limit: 10,
-            results: vec![
-                json!({"id": "test1"}),
-                json!({"id": "test2"}),
-            ],
+            results: vec![json!({"id": "test1"}), json!({"id": "test2"})],
         };
 
         let dict = result.to_dict();
@@ -110,7 +107,7 @@ mod tests {
 
         assert!(result.is_err());
         match result {
-            Err(StoreError::InvalidSchemaId) => {},
+            Err(StoreError::InvalidSchemaId) => {}
             _ => panic!("Expected InvalidSchemaId error"),
         }
     }
@@ -125,10 +122,12 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema(
-            "gts.vendor.package.namespace.type.v1.0~",
-            schema_content.clone(),
-        ).unwrap();
+        store
+            .register_schema(
+                "gts.vendor.package.namespace.type.v1.0~",
+                schema_content.clone(),
+            )
+            .unwrap();
 
         let result = store.get_schema_content("gts.vendor.package.namespace.type.v1.0~");
         assert!(result.is_ok());
@@ -161,10 +160,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type.v{}.0~", i),
-                schema_content,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type.v{}.0~", i),
+                    schema_content,
+                )
+                .unwrap();
         }
 
         assert_eq!(store.items().count(), 3);
@@ -214,7 +215,9 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_content).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_content)
+            .unwrap();
 
         let graph = store.build_schema_graph("gts.vendor.package.namespace.type.v1.0~");
         assert!(graph.is_object());
@@ -234,10 +237,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type.v{}.0~", i),
-                schema_content,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type.v{}.0~", i),
+                    schema_content,
+                )
+                .unwrap();
         }
 
         // Query with wildcard
@@ -258,10 +263,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type.v{}.0~", i),
-                schema_content,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type.v{}.0~", i),
+                    schema_content,
+                )
+                .unwrap();
         }
 
         // Query with limit of 2
@@ -312,8 +319,12 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         // Register an entity with proper schema_id
         let cfg = GtsConfig::default();
@@ -340,7 +351,7 @@ mod tests {
         // Test casting
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         // Just verify it executes
@@ -379,10 +390,7 @@ mod tests {
 
         store.register(entity).unwrap();
 
-        let result = store.cast(
-            "gts.vendor.package.namespace.type.v1.0",
-            "nonexistent~"
-        );
+        let result = store.cast("gts.vendor.package.namespace.type.v1.0", "nonexistent~");
         assert!(result.is_err());
     }
 
@@ -409,12 +417,16 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         let result = store.is_minor_compatible(
             "gts.vendor.package.namespace.type.v1.0~",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         // Just verify it returns a result
@@ -466,7 +478,9 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let result = store.query("gts.vendor.package.namespace.type.v1.0~", 10);
         assert_eq!(result.count, 1);
@@ -527,7 +541,9 @@ mod tests {
             "required": ["name"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -687,7 +703,7 @@ mod tests {
 
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
         assert!(result.is_err());
     }
@@ -728,8 +744,12 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -771,7 +791,9 @@ mod tests {
             "required": ["age"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -809,10 +831,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type{}.v1.0~", i),
-                schema,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type{}.v1.0~", i),
+                    schema,
+                )
+                .unwrap();
         }
 
         let result = store.query("gts.vendor.package.namespace.type0.*", 10);
@@ -865,8 +889,12 @@ mod tests {
             "required": ["name"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -891,7 +919,7 @@ mod tests {
 
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         assert!(result.is_ok() || result.is_err());
@@ -918,8 +946,12 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let graph = store.build_schema_graph("gts.vendor.package.namespace.type.v1.0~");
         assert!(graph.is_object());
@@ -938,11 +970,16 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema.clone()).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema.clone())
+            .unwrap();
 
         let result = store.get_schema_content("gts.vendor.package.namespace.type.v1.0~");
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().get("type").unwrap().as_str().unwrap(), "object");
+        assert_eq!(
+            result.unwrap().get("type").unwrap().as_str().unwrap(),
+            "object"
+        );
     }
 
     #[test]
@@ -956,7 +993,9 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let content = json!({
             "id": "gts.vendor.package.namespace.type.v1.0",
@@ -1026,8 +1065,12 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema2)
+            .unwrap();
 
         let result = store.get_schema_content("gts.vendor.package.namespace.type.v1.0~");
         assert!(result.is_ok());
@@ -1046,7 +1089,9 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema)
+            .unwrap();
 
         let content = json!({
             "id": "gts.vendor.package.namespace.type.v1.0",
@@ -1069,7 +1114,7 @@ mod tests {
 
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
         assert!(result.is_err());
     }
@@ -1090,8 +1135,12 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor1.package.namespace.type.v1.0~", schema1).unwrap();
-        store.register_schema("gts.vendor2.package.namespace.type.v1.0~", schema2).unwrap();
+        store
+            .register_schema("gts.vendor1.package.namespace.type.v1.0~", schema1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor2.package.namespace.type.v1.0~", schema2)
+            .unwrap();
 
         let result1 = store.query("gts.vendor1.*", 10);
         assert_eq!(result1.count, 1);
@@ -1144,9 +1193,15 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.base.v1.0~", base).unwrap();
-        store.register_schema("gts.vendor.package.namespace.middle.v1.0~", middle).unwrap();
-        store.register_schema("gts.vendor.package.namespace.top.v1.0~", top).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base.v1.0~", base)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.middle.v1.0~", middle)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.top.v1.0~", top)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1184,10 +1239,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type.v{}.0~", i),
-                schema,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type.v{}.0~", i),
+                    schema,
+                )
+                .unwrap();
         }
 
         let result = store.query("gts.vendor.package.namespace.type.*", 10);
@@ -1218,8 +1275,12 @@ mod tests {
             "required": ["name", "age"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v2.0~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v2.0~", schema_v2)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1243,7 +1304,7 @@ mod tests {
 
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v2.0~"
+            "gts.vendor.package.namespace.type.v2.0~",
         );
 
         assert!(result.is_ok() || result.is_err());
@@ -1260,10 +1321,12 @@ mod tests {
                 "type": "object"
             });
 
-            store.register_schema(
-                &format!("gts.vendor.package.namespace.type{}.v1.0~", i),
-                schema,
-            ).unwrap();
+            store
+                .register_schema(
+                    &format!("gts.vendor.package.namespace.type{}.v1.0~", i),
+                    schema,
+                )
+                .unwrap();
         }
 
         let count = store.items().count();
@@ -1293,12 +1356,16 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         let result = store.is_minor_compatible(
             "gts.vendor.package.namespace.type.v1.0~",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         assert!(result.is_backward_compatible || !result.is_backward_compatible);
@@ -1336,9 +1403,15 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.base1.v1.0~", base1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.base2.v1.0~", base2).unwrap();
-        store.register_schema("gts.vendor.package.namespace.combined.v1.0~", combined).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base1.v1.0~", base1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base2.v1.0~", base2)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.combined.v1.0~", combined)
+            .unwrap();
 
         let graph = store.build_schema_graph("gts.vendor.package.namespace.combined.v1.0~");
         assert!(graph.is_object());
@@ -1386,7 +1459,9 @@ mod tests {
             "required": ["name", "age"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1430,7 +1505,9 @@ mod tests {
             "required": ["name"]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1489,7 +1566,9 @@ mod tests {
             "type": "object"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let result = store.query("gts.vendor.*", 0);
         assert_eq!(result.results.len(), 0);
@@ -1508,7 +1587,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1532,7 +1613,7 @@ mod tests {
 
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.0~"
+            "gts.vendor.package.namespace.type.v1.0~",
         );
         assert!(result.is_ok() || result.is_err());
     }
@@ -1550,7 +1631,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
 
@@ -1592,7 +1675,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema.clone()).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema.clone())
+            .unwrap();
 
         let result = store.get_schema_content("gts.vendor.package.namespace.type.v1.0~");
         assert!(result.is_ok());
@@ -1626,12 +1711,16 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         let result = store.is_minor_compatible(
             "gts.vendor.package.namespace.type.v1.0~",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         // Removing properties affects forward compatibility
@@ -1651,7 +1740,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let graph = store.build_schema_graph("gts.vendor.package.namespace.type.v1.0~");
         assert!(graph.is_object());
@@ -1682,7 +1773,9 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1719,7 +1812,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("error").unwrap().as_str().unwrap(), "Test error message");
+        assert_eq!(
+            dict.get("error").unwrap().as_str().unwrap(),
+            "Test error message"
+        );
         assert_eq!(dict.get("count").unwrap().as_u64().unwrap(), 0);
     }
 
@@ -1751,8 +1847,12 @@ mod tests {
             ]
         });
 
-        store.register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.base.v1.0~", base_schema)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1794,7 +1894,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -1844,13 +1946,17 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1).unwrap();
-        store.register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema_v1)
+            .unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.1~", schema_v2)
+            .unwrap();
 
         // Try to cast from schema to schema
         let result = store.cast(
             "gts.vendor.package.namespace.type.v1.0~",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         assert!(result.is_ok() || result.is_err());
@@ -1870,7 +1976,9 @@ mod tests {
             }
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         // Register instance with schema_id
         let cfg = GtsConfig::default();
@@ -2022,7 +2130,9 @@ mod tests {
             "type": "invalid_type"
         });
 
-        store.register_schema("gts.vendor.package.namespace.type.v1.0~", schema).unwrap();
+        store
+            .register_schema("gts.vendor.package.namespace.type.v1.0~", schema)
+            .unwrap();
 
         let cfg = GtsConfig::default();
         let content = json!({
@@ -2066,9 +2176,10 @@ mod tests {
         }
 
         fn read_by_id(&self, entity_id: &str) -> Option<GtsEntity> {
-            self.entities.iter().find(|e| {
-                e.gts_id.as_ref().map(|id| id.id.as_str()) == Some(entity_id)
-            }).cloned()
+            self.entities
+                .iter()
+                .find(|e| e.gts_id.as_ref().map(|id| id.id.as_str()) == Some(entity_id))
+                .cloned()
         }
 
         fn reset(&mut self) {

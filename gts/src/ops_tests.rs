@@ -312,7 +312,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert_eq!(dict.get("valid").unwrap().as_bool().unwrap(), true);
         assert!(dict.contains_key("error"));
     }
@@ -334,7 +337,10 @@ mod tests {
         let dict = segment.to_dict();
         assert_eq!(dict.get("vendor").unwrap().as_str().unwrap(), "vendor");
         assert_eq!(dict.get("package").unwrap().as_str().unwrap(), "package");
-        assert_eq!(dict.get("namespace").unwrap().as_str().unwrap(), "namespace");
+        assert_eq!(
+            dict.get("namespace").unwrap().as_str().unwrap(),
+            "namespace"
+        );
         assert_eq!(dict.get("type").unwrap().as_str().unwrap(), "type");
         assert_eq!(dict.get("ver_major").unwrap().as_u64().unwrap(), 1);
         assert_eq!(dict.get("ver_minor").unwrap().as_u64().unwrap(), 0);
@@ -352,7 +358,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert_eq!(dict.get("ok").unwrap().as_bool().unwrap(), true);
         assert!(dict.contains_key("segments"));
     }
@@ -369,8 +378,14 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("candidate").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
-        assert_eq!(dict.get("pattern").unwrap().as_str().unwrap(), "gts.vendor.*");
+        assert_eq!(
+            dict.get("candidate").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
+        assert_eq!(
+            dict.get("pattern").unwrap().as_str().unwrap(),
+            "gts.vendor.*"
+        );
         // is_match field may or may not be present depending on implementation
         assert!(dict.contains_key("candidate"));
     }
@@ -385,8 +400,14 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
-        assert_eq!(dict.get("uuid").unwrap().as_str().unwrap(), "550e8400-e29b-41d4-a716-446655440000");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
+        assert_eq!(
+            dict.get("uuid").unwrap().as_str().unwrap(),
+            "550e8400-e29b-41d4-a716-446655440000"
+        );
     }
 
     #[test]
@@ -400,7 +421,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert_eq!(dict.get("ok").unwrap().as_bool().unwrap(), true);
     }
 
@@ -432,7 +456,10 @@ mod tests {
         };
 
         let dict = info.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert_eq!(dict.get("is_schema").unwrap().as_bool().unwrap(), false);
         assert!(dict.contains_key("schema_id"));
     }
@@ -479,7 +506,10 @@ mod tests {
 
         let dict = result.to_dict();
         assert_eq!(dict.get("ok").unwrap().as_bool().unwrap(), true);
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
     }
 
     #[test]
@@ -503,10 +533,7 @@ mod tests {
             },
         ];
 
-        let result = GtsAddEntitiesResult {
-            ok: true,
-            results,
-        };
+        let result = GtsAddEntitiesResult { ok: true, results };
 
         let dict = result.to_dict();
         assert_eq!(dict.get("ok").unwrap().as_bool().unwrap(), true);
@@ -525,7 +552,10 @@ mod tests {
 
         let dict = result.to_dict();
         assert_eq!(dict.get("ok").unwrap().as_bool().unwrap(), true);
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0~");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0~"
+        );
     }
 
     #[test]
@@ -541,7 +571,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("id").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("id").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert!(dict.contains_key("schema_id"));
         assert!(dict.contains_key("selected_entity_field"));
         assert!(dict.contains_key("selected_schema_id_field"));
@@ -557,7 +590,10 @@ mod tests {
         let result = resolver.resolve("name");
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("gts_id").unwrap().as_str().unwrap(), "gts.test.id.v1.0");
+        assert_eq!(
+            dict.get("gts_id").unwrap().as_str().unwrap(),
+            "gts.test.id.v1.0"
+        );
         assert_eq!(dict.get("path").unwrap().as_str().unwrap(), "name");
         assert!(dict.contains_key("resolved"));
     }
@@ -590,7 +626,7 @@ mod tests {
 
         let direction = GtsEntityCastResult::infer_direction(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.1"
+            "gts.vendor.package.namespace.type.v1.1",
         );
         assert_eq!(direction, "up");
     }
@@ -601,7 +637,7 @@ mod tests {
 
         let direction = GtsEntityCastResult::infer_direction(
             "gts.vendor.package.namespace.type.v1.1",
-            "gts.vendor.package.namespace.type.v1.0"
+            "gts.vendor.package.namespace.type.v1.0",
         );
         assert_eq!(direction, "down");
     }
@@ -612,7 +648,7 @@ mod tests {
 
         let direction = GtsEntityCastResult::infer_direction(
             "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.package.namespace.type.v1.0"
+            "gts.vendor.package.namespace.type.v1.0",
         );
         assert_eq!(direction, "none");
     }
@@ -621,10 +657,7 @@ mod tests {
     fn test_json_entity_cast_result_infer_direction_unknown() {
         use crate::schema_cast::GtsEntityCastResult;
 
-        let direction = GtsEntityCastResult::infer_direction(
-            "invalid",
-            "also-invalid"
-        );
+        let direction = GtsEntityCastResult::infer_direction("invalid", "also-invalid");
         assert_eq!(direction, "unknown");
     }
 
@@ -657,7 +690,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -680,7 +713,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_err());
@@ -714,7 +747,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -743,7 +776,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -777,7 +810,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -807,7 +840,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -827,7 +860,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -859,7 +892,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -889,7 +922,10 @@ mod tests {
         };
 
         let dict = result.to_dict();
-        assert_eq!(dict.get("from").unwrap().as_str().unwrap(), "gts.vendor.package.namespace.type.v1.0");
+        assert_eq!(
+            dict.get("from").unwrap().as_str().unwrap(),
+            "gts.vendor.package.namespace.type.v1.0"
+        );
         assert_eq!(dict.get("direction").unwrap().as_str().unwrap(), "up");
     }
 
@@ -923,7 +959,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -963,7 +999,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -990,7 +1026,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -1029,7 +1065,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -1062,7 +1098,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -1090,7 +1126,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -1120,7 +1156,7 @@ mod tests {
             &instance,
             &from_schema,
             &to_schema,
-            None
+            None,
         );
 
         assert!(result.is_ok());
@@ -1147,7 +1183,8 @@ mod tests {
             }
         });
 
-        let (is_backward, backward_errors) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_backward, backward_errors) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
         assert!(!is_backward);
         assert!(!backward_errors.is_empty());
     }
@@ -1176,8 +1213,10 @@ mod tests {
             }
         });
 
-        let (is_backward, _) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
-        let (is_forward, _) = GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
+        let (is_backward, _) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_forward, _) =
+            GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
 
         // Adding enum values is not backward compatible but is forward compatible
         assert!(!is_backward);
@@ -1210,7 +1249,8 @@ mod tests {
             }
         });
 
-        let (is_backward, backward_errors) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_backward, backward_errors) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
         assert!(!is_backward);
         assert!(!backward_errors.is_empty());
     }
@@ -1241,7 +1281,8 @@ mod tests {
             }
         });
 
-        let (is_backward, _) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_backward, _) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
         assert!(!is_backward);
     }
 
@@ -1271,7 +1312,8 @@ mod tests {
             }
         });
 
-        let (is_backward, _) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_backward, _) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
         assert!(!is_backward);
     }
 
@@ -1296,7 +1338,8 @@ mod tests {
             }
         });
 
-        let (is_backward, _) = GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
+        let (is_backward, _) =
+            GtsEntityCastResult::check_backward_compatibility(&old_schema, &new_schema);
         assert!(!is_backward);
     }
 
@@ -1321,7 +1364,8 @@ mod tests {
             }
         });
 
-        let (is_forward, _) = GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
+        let (is_forward, _) =
+            GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
         assert!(!is_forward);
     }
 
@@ -1347,7 +1391,8 @@ mod tests {
             "required": ["name"]
         });
 
-        let (is_forward, forward_errors) = GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
+        let (is_forward, forward_errors) =
+            GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
         assert!(!is_forward);
         assert!(!forward_errors.is_empty());
     }
@@ -1376,7 +1421,8 @@ mod tests {
             }
         });
 
-        let (is_forward, forward_errors) = GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
+        let (is_forward, forward_errors) =
+            GtsEntityCastResult::check_forward_compatibility(&old_schema, &new_schema);
         assert!(!is_forward);
         assert!(!forward_errors.is_empty());
     }
@@ -1414,20 +1460,14 @@ mod tests {
     #[test]
     fn test_gts_ops_match_id_pattern_valid() {
         let ops = GtsOps::new(None, None, 0);
-        let result = ops.match_id_pattern(
-            "gts.vendor.package.namespace.type.v1.0",
-            "gts.vendor.*"
-        );
+        let result = ops.match_id_pattern("gts.vendor.package.namespace.type.v1.0", "gts.vendor.*");
         assert!(result.is_match);
     }
 
     #[test]
     fn test_gts_ops_match_id_pattern_invalid() {
         let ops = GtsOps::new(None, None, 0);
-        let result = ops.match_id_pattern(
-            "gts.vendor.package.namespace.type.v1.0",
-            "gts.other.*"
-        );
+        let result = ops.match_id_pattern("gts.vendor.package.namespace.type.v1.0", "gts.other.*");
         assert!(!result.is_match);
     }
 
@@ -1457,7 +1497,10 @@ mod tests {
             "type": "object"
         });
 
-        ops.add_schema("gts.vendor.package.namespace.type.v1.0~".to_string(), schema);
+        ops.add_schema(
+            "gts.vendor.package.namespace.type.v1.0~".to_string(),
+            schema,
+        );
 
         let result = ops.schema_graph("gts.vendor.package.namespace.type.v1.0~");
         assert!(result.graph.is_object());
@@ -1623,7 +1666,10 @@ mod tests {
             }
         });
 
-        ops.add_schema("gts.vendor.package.namespace.type.v1.0~".to_string(), schema);
+        ops.add_schema(
+            "gts.vendor.package.namespace.type.v1.0~".to_string(),
+            schema,
+        );
 
         let content = json!({
             "id": "gts.vendor.package.namespace.type.v1.0",
@@ -1693,12 +1739,18 @@ mod tests {
             }
         });
 
-        ops.add_schema("gts.vendor.package.namespace.type.v1.0~".to_string(), schema1);
-        ops.add_schema("gts.vendor.package.namespace.type.v1.1~".to_string(), schema2);
+        ops.add_schema(
+            "gts.vendor.package.namespace.type.v1.0~".to_string(),
+            schema1,
+        );
+        ops.add_schema(
+            "gts.vendor.package.namespace.type.v1.1~".to_string(),
+            schema2,
+        );
 
         let result = ops.compatibility(
             "gts.vendor.package.namespace.type.v1.0~",
-            "gts.vendor.package.namespace.type.v1.1~"
+            "gts.vendor.package.namespace.type.v1.1~",
         );
 
         assert!(result.is_backward_compatible || !result.is_backward_compatible);
@@ -1842,7 +1894,7 @@ mod tests {
 
     #[test]
     fn test_json_entity_with_validation_result() {
-        use crate::entities::{GtsConfig, GtsEntity, ValidationResult, ValidationError};
+        use crate::entities::{GtsConfig, GtsEntity, ValidationError, ValidationResult};
 
         let cfg = GtsConfig::default();
         let content = json!({"id": "gts.vendor.package.namespace.type.v1.0"});
