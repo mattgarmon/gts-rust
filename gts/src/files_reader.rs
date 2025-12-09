@@ -7,6 +7,7 @@ use crate::entities::{GtsConfig, GtsEntity, GtsFile};
 use crate::store::GtsReader;
 
 const EXCLUDE_LIST: &[&str] = &["node_modules", "dist", "build"];
+const VALID_EXTENSIONS: &[&str] = &[".json", ".jsonc", ".gts", ".yaml", ".yml"];
 
 pub struct GtsFileReader {
     paths: Vec<PathBuf>,
@@ -31,7 +32,6 @@ impl GtsFileReader {
     }
 
     fn collect_files(&mut self) {
-        let valid_extensions = [".json", ".jsonc", ".gts", ".yaml", ".yml"];
         let mut seen = std::collections::HashSet::new();
         let mut collected = Vec::new();
 
@@ -41,7 +41,7 @@ impl GtsFileReader {
             if resolved_path.is_file() {
                 if let Some(ext) = resolved_path.extension() {
                     let ext_str = ext.to_string_lossy().to_lowercase();
-                    if valid_extensions.contains(&format!(".{}", ext_str).as_str()) {
+                    if VALID_EXTENSIONS.contains(&format!(".{}", ext_str).as_str()) {
                         let rp = resolved_path.to_string_lossy().to_string();
                         if !seen.contains(&rp) {
                             seen.insert(rp.clone());
@@ -70,7 +70,7 @@ impl GtsFileReader {
                     if path.is_file() {
                         if let Some(ext) = path.extension() {
                             let ext_str = ext.to_string_lossy().to_lowercase();
-                            if valid_extensions.contains(&format!(".{}", ext_str).as_str()) {
+                            if VALID_EXTENSIONS.contains(&format!(".{}", ext_str).as_str()) {
                                 let rp = path
                                     .canonicalize()
                                     .unwrap_or_else(|_| path.to_path_buf())

@@ -194,8 +194,7 @@ impl GtsStore {
         }
     }
 
-    #[allow(clippy::only_used_in_recursion)]
-    fn remove_x_gts_ref_fields(&self, schema: &Value) -> Value {
+    fn remove_x_gts_ref_fields(schema: &Value) -> Value {
         // Recursively remove x-gts-ref fields from a schema
         // This is needed because the jsonschema crate doesn't understand x-gts-ref
         // and will fail on JSON Pointer references like "/$id"
@@ -206,13 +205,13 @@ impl GtsStore {
                     if key == "x-gts-ref" {
                         continue; // Skip x-gts-ref fields
                     }
-                    new_map.insert(key.clone(), self.remove_x_gts_ref_fields(value));
+                    new_map.insert(key.clone(), Self::remove_x_gts_ref_fields(value));
                 }
                 Value::Object(new_map)
             }
             Value::Array(arr) => Value::Array(
                 arr.iter()
-                    .map(|v| self.remove_x_gts_ref_fields(v))
+                    .map(Self::remove_x_gts_ref_fields)
                     .collect(),
             ),
             _ => schema.clone(),
@@ -300,7 +299,7 @@ impl GtsStore {
         // 2. Validate against JSON Schema meta-schema
         // We need to remove x-gts-ref fields before compiling because the jsonschema
         // crate doesn't understand them and will fail on JSON Pointer references
-        let mut schema_for_validation = self.remove_x_gts_ref_fields(&schema_content);
+        let mut schema_for_validation = Self::remove_x_gts_ref_fields(&schema_content);
 
         // Also remove $id and $schema to avoid URL resolution issues
         if let Value::Object(ref mut map) = schema_for_validation {

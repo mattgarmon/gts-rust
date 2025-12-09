@@ -307,7 +307,7 @@ impl XGtsRefValidator {
     ) -> Option<XGtsRefValidationError> {
         // Resolve pattern if it's a relative reference
         let resolved_pattern = if ref_pattern.starts_with('/') {
-            match self.resolve_pointer(schema, ref_pattern) {
+            match Self::resolve_pointer(schema, ref_pattern) {
                 Some(resolved) => {
                     if !resolved.starts_with("gts.") {
                         return Some(XGtsRefValidationError::new(
@@ -353,7 +353,7 @@ impl XGtsRefValidator {
 
         // Case 2: Relative reference
         if ref_pattern.starts_with('/') {
-            match self.resolve_pointer(root_schema, ref_pattern) {
+            match Self::resolve_pointer(root_schema, ref_pattern) {
                 Some(resolved) => {
                     if !GtsID::is_valid(&resolved) {
                         return Some(XGtsRefValidationError::new(
@@ -478,8 +478,7 @@ impl XGtsRefValidator {
     ///
     /// # Returns
     /// The resolved value as a string or None if not found
-    #[allow(clippy::only_used_in_recursion)]
-    fn resolve_pointer(&self, schema: &Value, pointer: &str) -> Option<String> {
+    fn resolve_pointer(schema: &Value, pointer: &str) -> Option<String> {
         let path = pointer.trim_start_matches('/');
         if path.is_empty() {
             return None;
@@ -505,7 +504,7 @@ impl XGtsRefValidator {
             if let Some(ref_value) = obj.get("x-gts-ref") {
                 if let Some(ref_str) = ref_value.as_str() {
                     if ref_str.starts_with('/') {
-                        return self.resolve_pointer(schema, ref_str);
+                        return Self::resolve_pointer(schema, ref_str);
                     }
                     return Some(ref_str.to_string());
                 }

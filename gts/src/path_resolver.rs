@@ -84,8 +84,7 @@ impl JsonPathResolver {
         parts
     }
 
-    #[allow(clippy::only_used_in_recursion)]
-    fn list_available(&self, node: &Value, prefix: &str, out: &mut Vec<String>) {
+    fn list_available(node: &Value, prefix: &str, out: &mut Vec<String>) {
         match node {
             Value::Object(map) => {
                 for (k, v) in map {
@@ -96,7 +95,7 @@ impl JsonPathResolver {
                     };
                     out.push(p.clone());
                     if v.is_object() || v.is_array() {
-                        self.list_available(v, &p, out);
+                        Self::list_available(v, &p, out);
                     }
                 }
             }
@@ -109,7 +108,7 @@ impl JsonPathResolver {
                     };
                     out.push(p.clone());
                     if v.is_object() || v.is_array() {
-                        self.list_available(v, &p, out);
+                        Self::list_available(v, &p, out);
                     }
                 }
             }
@@ -119,7 +118,7 @@ impl JsonPathResolver {
 
     fn collect_from(&self, node: &Value) -> Vec<String> {
         let mut acc = Vec::new();
-        self.list_available(node, "", &mut acc);
+        Self::list_available(node, "", &mut acc);
         acc
     }
 
