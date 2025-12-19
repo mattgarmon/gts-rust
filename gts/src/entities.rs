@@ -35,6 +35,7 @@ pub struct GtsFile {
 }
 
 impl GtsFile {
+    #[must_use] 
     pub fn new(path: String, name: String, content: Value) -> Self {
         let sequence_content: HashMap<usize, Value> = if let Some(arr) = content.as_array() {
             arr.iter()
@@ -67,26 +68,26 @@ impl Default for GtsConfig {
     fn default() -> Self {
         GtsConfig {
             entity_id_fields: vec![
-                "$id".to_string(),
-                "gtsId".to_string(),
-                "gtsIid".to_string(),
-                "gtsOid".to_string(),
-                "gtsI".to_string(),
-                "gts_id".to_string(),
-                "gts_oid".to_string(),
-                "gts_iid".to_string(),
-                "id".to_string(),
+                "$id".to_owned(),
+                "gtsId".to_owned(),
+                "gtsIid".to_owned(),
+                "gtsOid".to_owned(),
+                "gtsI".to_owned(),
+                "gts_id".to_owned(),
+                "gts_oid".to_owned(),
+                "gts_iid".to_owned(),
+                "id".to_owned(),
             ],
             schema_id_fields: vec![
-                "$schema".to_string(),
-                "gtsTid".to_string(),
-                "gtsType".to_string(),
-                "gtsT".to_string(),
-                "gts_t".to_string(),
-                "gts_tid".to_string(),
-                "gts_type".to_string(),
-                "type".to_string(),
-                "schema".to_string(),
+                "$schema".to_owned(),
+                "gtsTid".to_owned(),
+                "gtsType".to_owned(),
+                "gtsT".to_owned(),
+                "gts_t".to_owned(),
+                "gts_tid".to_owned(),
+                "gts_type".to_owned(),
+                "type".to_owned(),
+                "schema".to_owned(),
             ],
         }
     }
@@ -117,6 +118,7 @@ pub struct GtsEntity {
 
 impl GtsEntity {
     #[allow(clippy::too_many_arguments)]
+    #[must_use] 
     pub fn new(
         file: Option<GtsFile>,
         list_sequence: Option<usize>,
@@ -185,7 +187,7 @@ impl GtsEntity {
         if let Some(obj) = content.as_object() {
             if let Some(desc) = obj.get("description") {
                 if let Some(s) = desc.as_str() {
-                    entity.description = s.to_string();
+                    s.clone_into(&mut entity.description);
                 }
             }
         }
@@ -230,6 +232,7 @@ impl GtsEntity {
         false
     }
 
+    #[must_use] 
     pub fn resolve_path(&self, path: &str) -> JsonPathResolver {
         let gts_id = self
             .gts_id
@@ -239,6 +242,10 @@ impl GtsEntity {
         JsonPathResolver::new(gts_id, self.content.clone()).resolve(path)
     }
 
+    /// Casts this entity to a different schema.
+    ///
+    /// # Errors
+    /// Returns `SchemaCastError` if the cast fails.
     pub fn cast(
         &self,
         to_schema: &GtsEntity,
@@ -306,14 +313,14 @@ impl GtsEntity {
                         let next_path = if current_path.is_empty() {
                             k.clone()
                         } else {
-                            format!("{}.{}", current_path, k)
+                            format!("{current_path}.{k}")
                         };
                         walk(v, &next_path, collector, matcher);
                     }
                 }
                 Value::Array(arr) => {
                     for (idx, item) in arr.iter().enumerate() {
-                        let next_path = format!("{}[{}]", current_path, idx);
+                        let next_path = format!("{current_path}[{idx}]");
                         walk(item, &next_path, collector, matcher);
                     }
                 }
@@ -346,11 +353,11 @@ impl GtsEntity {
             if let Some(s) = node.as_str() {
                 if GtsID::is_valid(s) {
                     return Some(GtsRef {
-                        id: s.to_string(),
+                        id: s.to_owned(),
                         source_path: if path.is_empty() {
-                            "root".to_string()
+                            "root".to_owned()
                         } else {
-                            path.to_string()
+                            path.to_owned()
                         },
                     });
                 }
@@ -370,12 +377,12 @@ impl GtsEntity {
                 if let Some(ref_val) = obj.get("$ref") {
                     if let Some(ref_str) = ref_val.as_str() {
                         let ref_path = if path.is_empty() {
-                            "$ref".to_string()
+                            "$ref".to_owned()
                         } else {
-                            format!("{}.$ref", path)
+                            format!("{path}.$ref")
                         };
                         return Some(GtsRef {
-                            id: ref_str.to_string(),
+                            id: ref_str.to_owned(),
                             source_path: ref_path,
                         });
                     }
@@ -393,7 +400,7 @@ impl GtsEntity {
             if let Some(v) = obj.get(field) {
                 if let Some(s) = v.as_str() {
                     if !s.trim().is_empty() {
-                        return Some(s.to_string());
+                        return Some(s.to_owned());
                     }
                 }
             }

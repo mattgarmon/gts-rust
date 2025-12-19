@@ -99,6 +99,7 @@ pub struct XGtsRefValidationError {
 }
 
 impl XGtsRefValidationError {
+    #[must_use] 
     pub fn new(field_path: String, value: String, ref_pattern: String, reason: String) -> Self {
         Self {
             field_path,
@@ -144,6 +145,7 @@ impl XGtsRefValidator {
     ///
     /// # Returns
     /// List of validation errors (empty if valid)
+    #[must_use] 
     pub fn validate_instance(
         &self,
         instance: &Value,
@@ -191,7 +193,7 @@ impl XGtsRefValidator {
                                     let prop_path = if path.is_empty() {
                                         prop_name.clone()
                                     } else {
-                                        format!("{}.{}", path, prop_name)
+                                        format!("{path}.{prop_name}")
                                     };
                                     self.visit_instance(
                                         prop_value,
@@ -209,7 +211,7 @@ impl XGtsRefValidator {
                 if let Some(items) = sch_obj.get("items") {
                     if let Some(inst_arr) = inst.as_array() {
                         for (idx, item) in inst_arr.iter().enumerate() {
-                            let item_path = format!("{}[{}]", path, idx);
+                            let item_path = format!("{path}[{idx}]");
                             self.visit_instance(item, items, root_schema, &item_path, errors);
                         }
                     }
@@ -227,6 +229,7 @@ impl XGtsRefValidator {
     ///
     /// # Returns
     /// List of validation errors (empty if valid)
+    #[must_use] 
     pub fn validate_schema(
         &self,
         schema: &Value,
@@ -253,9 +256,9 @@ impl XGtsRefValidator {
         // Check for x-gts-ref field
         if let Some(x_gts_ref) = sch_obj.get("x-gts-ref") {
             let ref_path = if path.is_empty() {
-                "x-gts-ref".to_string()
+                "x-gts-ref".to_owned()
             } else {
-                format!("{}/x-gts-ref", path)
+                format!("{path}/x-gts-ref")
             };
 
             if let Some(ref_value) = x_gts_ref.as_str() {
@@ -265,9 +268,9 @@ impl XGtsRefValidator {
             } else {
                 errors.push(XGtsRefValidationError::new(
                     ref_path,
-                    format!("{:?}", x_gts_ref),
+                    format!("{x_gts_ref:?}"),
                     String::new(),
-                    format!("x-gts-ref value must be a string, got {}", x_gts_ref),
+                    format!("x-gts-ref value must be a string, got {x_gts_ref}"),
                 ));
             }
         }
@@ -280,7 +283,7 @@ impl XGtsRefValidator {
             let nested_path = if path.is_empty() {
                 key.clone()
             } else {
-                format!("{}/{}", path, key)
+                format!("{path}/{key}")
             };
 
             if value.is_object() {
@@ -288,7 +291,7 @@ impl XGtsRefValidator {
             } else if let Some(arr) = value.as_array() {
                 for (idx, item) in arr.iter().enumerate() {
                     if item.is_object() {
-                        let item_path = format!("{}[{}]", nested_path, idx);
+                        let item_path = format!("{nested_path}[{idx}]");
                         self.visit_schema(item, &item_path, root_schema, errors);
                     }
                 }
@@ -310,12 +313,11 @@ impl XGtsRefValidator {
                 Some(resolved) => {
                     if !resolved.starts_with("gts.") {
                         return Some(XGtsRefValidationError::new(
-                            field_path.to_string(),
-                            value.to_string(),
-                            ref_pattern.to_string(),
+                            field_path.to_owned(),
+                            value.to_owned(),
+                            ref_pattern.to_owned(),
                             format!(
-                                "Resolved reference '{}' -> '{}' is not a GTS pattern",
-                                ref_pattern, resolved
+                                "Resolved reference '{ref_pattern}' -> '{resolved}' is not a GTS pattern"
                             ),
                         ));
                     }
@@ -323,15 +325,15 @@ impl XGtsRefValidator {
                 }
                 None => {
                     return Some(XGtsRefValidationError::new(
-                        field_path.to_string(),
-                        value.to_string(),
-                        ref_pattern.to_string(),
-                        format!("Cannot resolve reference path '{}'", ref_pattern),
+                        field_path.to_owned(),
+                        value.to_owned(),
+                        ref_pattern.to_owned(),
+                        format!("Cannot resolve reference path '{ref_pattern}'"),
                     ));
                 }
             }
         } else {
-            ref_pattern.to_string()
+            ref_pattern.to_owned()
         };
 
         // Validate against GTS pattern
@@ -356,32 +358,30 @@ impl XGtsRefValidator {
                 Some(resolved) => {
                     if !GtsID::is_valid(&resolved) {
                         return Some(XGtsRefValidationError::new(
-                            field_path.to_string(),
-                            ref_pattern.to_string(),
-                            ref_pattern.to_string(),
+                            field_path.to_owned(),
+                            ref_pattern.to_owned(),
+                            ref_pattern.to_owned(),
                             format!(
-                                "Resolved reference '{}' -> '{}' is not a valid GTS identifier",
-                                ref_pattern, resolved
+                                "Resolved reference '{ref_pattern}' -> '{resolved}' is not a valid GTS identifier"
                             ),
                         ));
                     }
                     None
                 }
                 None => Some(XGtsRefValidationError::new(
-                    field_path.to_string(),
-                    ref_pattern.to_string(),
-                    ref_pattern.to_string(),
-                    format!("Cannot resolve reference path '{}'", ref_pattern),
+                    field_path.to_owned(),
+                    ref_pattern.to_owned(),
+                    ref_pattern.to_owned(),
+                    format!("Cannot resolve reference path '{ref_pattern}'"),
                 )),
             }
         } else {
             Some(XGtsRefValidationError::new(
-                field_path.to_string(),
-                ref_pattern.to_string(),
-                ref_pattern.to_string(),
+                field_path.to_owned(),
+                ref_pattern.to_owned(),
+                ref_pattern.to_owned(),
                 format!(
-                    "Invalid x-gts-ref value: '{}' must start with 'gts.' or '/'",
-                    ref_pattern
+                    "Invalid x-gts-ref value: '{ref_pattern}' must start with 'gts.' or '/'"
                 ),
             ))
         }
@@ -403,10 +403,10 @@ impl XGtsRefValidator {
             let prefix = pattern.trim_end_matches('*');
             if !prefix.starts_with("gts.") {
                 return Some(XGtsRefValidationError::new(
-                    field_path.to_string(),
-                    pattern.to_string(),
-                    pattern.to_string(),
-                    format!("Invalid GTS wildcard pattern: {}", pattern),
+                    field_path.to_owned(),
+                    pattern.to_owned(),
+                    pattern.to_owned(),
+                    format!("Invalid GTS wildcard pattern: {pattern}"),
                 ));
             }
             return None;
@@ -415,10 +415,10 @@ impl XGtsRefValidator {
         // Specific GTS ID
         if !GtsID::is_valid(pattern) {
             return Some(XGtsRefValidationError::new(
-                field_path.to_string(),
-                pattern.to_string(),
-                pattern.to_string(),
-                format!("Invalid GTS identifier: {}", pattern),
+                field_path.to_owned(),
+                pattern.to_owned(),
+                pattern.to_owned(),
+                format!("Invalid GTS identifier: {pattern}"),
             ));
         }
 
@@ -435,10 +435,10 @@ impl XGtsRefValidator {
         // Validate it's a valid GTS ID
         if !GtsID::is_valid(value) {
             return Some(XGtsRefValidationError::new(
-                field_path.to_string(),
-                value.to_string(),
-                pattern.to_string(),
-                format!("Value '{}' is not a valid GTS identifier", value),
+                field_path.to_owned(),
+                value.to_owned(),
+                pattern.to_owned(),
+                format!("Value '{value}' is not a valid GTS identifier"),
             ));
         }
 
@@ -448,18 +448,18 @@ impl XGtsRefValidator {
         } else if let Some(prefix) = pattern.strip_suffix('*') {
             if !value.starts_with(prefix) {
                 return Some(XGtsRefValidationError::new(
-                    field_path.to_string(),
-                    value.to_string(),
-                    pattern.to_string(),
-                    format!("Value '{}' does not match pattern '{}'", value, pattern),
+                    field_path.to_owned(),
+                    value.to_owned(),
+                    pattern.to_owned(),
+                    format!("Value '{value}' does not match pattern '{pattern}'"),
                 ));
             }
         } else if !value.starts_with(pattern) {
             return Some(XGtsRefValidationError::new(
-                field_path.to_string(),
-                value.to_string(),
-                pattern.to_string(),
-                format!("Value '{}' does not match pattern '{}'", value, pattern),
+                field_path.to_owned(),
+                value.to_owned(),
+                pattern.to_owned(),
+                format!("Value '{value}' does not match pattern '{pattern}'"),
             ));
         }
 
@@ -495,7 +495,7 @@ impl XGtsRefValidator {
 
         // If current is a string, return it
         if let Some(s) = current.as_str() {
-            return Some(s.to_string());
+            return Some(s.to_owned());
         }
 
         // If current is an object with x-gts-ref, resolve it
@@ -505,7 +505,7 @@ impl XGtsRefValidator {
                     if ref_str.starts_with('/') {
                         return Self::resolve_pointer(schema, ref_str);
                     }
-                    return Some(ref_str.to_string());
+                    return Some(ref_str.to_owned());
                 }
             }
         }

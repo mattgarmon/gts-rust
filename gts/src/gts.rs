@@ -58,8 +58,12 @@ pub struct GtsIdSegment {
 }
 
 impl GtsIdSegment {
+    /// Creates a new GTS ID segment from a string.
+    ///
+    /// # Errors
+    /// Returns `GtsError::InvalidSegment` if the segment string is invalid.
     pub fn new(num: usize, offset: usize, segment: &str) -> Result<Self, GtsError> {
-        let segment = segment.trim().to_string();
+        let segment = segment.trim().to_owned();
         let mut seg = GtsIdSegment {
             num,
             offset,
@@ -80,7 +84,7 @@ impl GtsIdSegment {
 
     #[allow(clippy::too_many_lines)]
     fn parse_segment_id(&mut self, segment: &str) -> Result<(), GtsError> {
-        let mut segment = segment.to_string();
+        let mut segment = segment.to_owned();
 
         // Check for type marker
         if segment.contains('~') {
@@ -90,7 +94,7 @@ impl GtsIdSegment {
                     num: self.num,
                     offset: self.offset,
                     segment: self.segment.clone(),
-                    cause: "Too many '~' characters".to_string(),
+                    cause: "Too many '~' characters".to_owned(),
                 });
             }
             if segment.ends_with('~') {
@@ -101,7 +105,7 @@ impl GtsIdSegment {
                     num: self.num,
                     offset: self.offset,
                     segment: self.segment.clone(),
-                    cause: " '~' must be at the end".to_string(),
+                    cause: " '~' must be at the end".to_owned(),
                 });
             }
         }
@@ -113,7 +117,7 @@ impl GtsIdSegment {
                 num: self.num,
                 offset: self.offset,
                 segment: self.segment.clone(),
-                cause: "Too many tokens".to_string(),
+                cause: "Too many tokens".to_owned(),
             });
         }
 
@@ -122,7 +126,7 @@ impl GtsIdSegment {
                 num: self.num,
                 offset: self.offset,
                 segment: self.segment.clone(),
-                cause: "Too few tokens".to_string(),
+                cause: "Too few tokens".to_owned(),
             });
         }
 
@@ -146,7 +150,7 @@ impl GtsIdSegment {
                 self.is_wildcard = true;
                 return Ok(());
             }
-            self.vendor = tokens[0].to_string();
+            tokens[0].clone_into(&mut self.vendor);
         }
 
         if tokens.len() > 1 {
@@ -154,7 +158,7 @@ impl GtsIdSegment {
                 self.is_wildcard = true;
                 return Ok(());
             }
-            self.package = tokens[1].to_string();
+            tokens[1].clone_into(&mut self.package);
         }
 
         if tokens.len() > 2 {
@@ -162,7 +166,7 @@ impl GtsIdSegment {
                 self.is_wildcard = true;
                 return Ok(());
             }
-            self.namespace = tokens[2].to_string();
+            tokens[2].clone_into(&mut self.namespace);
         }
 
         if tokens.len() > 3 {
@@ -170,7 +174,7 @@ impl GtsIdSegment {
                 self.is_wildcard = true;
                 return Ok(());
             }
-            self.type_name = tokens[3].to_string();
+            tokens[3].clone_into(&mut self.type_name);
         }
 
         if tokens.len() > 4 {
@@ -184,7 +188,7 @@ impl GtsIdSegment {
                     num: self.num,
                     offset: self.offset,
                     segment: self.segment.clone(),
-                    cause: "Major version must start with 'v'".to_string(),
+                    cause: "Major version must start with 'v'".to_owned(),
                 });
             }
 
@@ -193,7 +197,7 @@ impl GtsIdSegment {
                 num: self.num,
                 offset: self.offset,
                 segment: self.segment.clone(),
-                cause: "Major version must be an integer".to_string(),
+                cause: "Major version must be an integer".to_owned(),
             })?;
 
             if major_str != self.ver_major.to_string() {
@@ -201,7 +205,7 @@ impl GtsIdSegment {
                     num: self.num,
                     offset: self.offset,
                     segment: self.segment.clone(),
-                    cause: "Major version must be an integer".to_string(),
+                    cause: "Major version must be an integer".to_owned(),
                 });
             }
         }
@@ -216,7 +220,7 @@ impl GtsIdSegment {
                 num: self.num,
                 offset: self.offset,
                 segment: self.segment.clone(),
-                cause: "Minor version must be an integer".to_string(),
+                cause: "Minor version must be an integer".to_owned(),
             })?;
 
             if tokens[5] != minor.to_string() {
@@ -224,7 +228,7 @@ impl GtsIdSegment {
                     num: self.num,
                     offset: self.offset,
                     segment: self.segment.clone(),
-                    cause: "Minor version must be an integer".to_string(),
+                    cause: "Minor version must be an integer".to_owned(),
                 });
             }
 
@@ -256,29 +260,29 @@ impl GtsID {
         // Validate lowercase
         if raw != raw.to_lowercase() {
             return Err(GtsError::InvalidId {
-                id: id.to_string(),
-                cause: "Must be lower case".to_string(),
+                id: id.to_owned(),
+                cause: "Must be lower case".to_owned(),
             });
         }
 
         if raw.contains('-') {
             return Err(GtsError::InvalidId {
-                id: id.to_string(),
-                cause: "Must not contain '-'".to_string(),
+                id: id.to_owned(),
+                cause: "Must not contain '-'".to_owned(),
             });
         }
 
         if !raw.starts_with(GTS_PREFIX) {
             return Err(GtsError::InvalidId {
-                id: id.to_string(),
+                id: id.to_owned(),
                 cause: format!("Does not start with '{GTS_PREFIX}'"),
             });
         }
 
         if raw.len() > 1024 {
             return Err(GtsError::InvalidId {
-                id: id.to_string(),
-                cause: "Too long".to_string(),
+                id: id.to_owned(),
+                cause: "Too long".to_owned(),
             });
         }
 
@@ -296,7 +300,7 @@ impl GtsID {
                     break;
                 }
             } else {
-                parts.push(tilde_parts[i].to_string());
+                parts.push(tilde_parts[i].to_owned());
             }
         }
 
@@ -304,7 +308,7 @@ impl GtsID {
         for (i, part) in parts.iter().enumerate() {
             if part.is_empty() || part == "~" {
                 return Err(GtsError::InvalidId {
-                    id: id.to_string(),
+                    id: id.to_owned(),
                     cause: format!("GTS segment #{} @ offset {offset} is empty", i + 1),
                 });
             }
@@ -314,15 +318,17 @@ impl GtsID {
         }
 
         Ok(GtsID {
-            id: raw.to_string(),
+            id: raw.to_owned(),
             gts_id_segments,
         })
     }
 
+    #[must_use] 
     pub fn is_type(&self) -> bool {
         self.id.ends_with('~')
     }
 
+    #[must_use] 
     pub fn get_type_id(&self) -> Option<String> {
         if self.gts_id_segments.len() < 2 {
             return None;
@@ -441,20 +447,24 @@ impl GtsID {
         true
     }
 
+    /// Splits a GTS ID with an optional attribute path.
+    ///
+    /// # Errors
+    /// Returns `GtsError::InvalidId` if the path is empty after the `@` separator.
     pub fn split_at_path(gts_with_path: &str) -> Result<(String, Option<String>), GtsError> {
         if !gts_with_path.contains('@') {
-            return Ok((gts_with_path.to_string(), None));
+            return Ok((gts_with_path.to_owned(), None));
         }
 
         let parts: Vec<&str> = gts_with_path.splitn(2, '@').collect();
-        let gts = parts[0].to_string();
-        let path = parts.get(1).map(|s| (*s).to_string());
+        let gts = parts[0].to_owned();
+        let path = parts.get(1).map(|s| (*s).to_owned());
 
         if let Some(ref p) = path {
             if p.is_empty() {
                 return Err(GtsError::InvalidId {
-                    id: gts_with_path.to_string(),
-                    cause: "Attribute path cannot be empty".to_string(),
+                    id: gts_with_path.to_owned(),
+                    cause: "Attribute path cannot be empty".to_owned(),
                 });
             }
         }
@@ -491,34 +501,37 @@ pub struct GtsWildcard {
 }
 
 impl GtsWildcard {
+    /// Creates a new GTS wildcard pattern.
+    ///
+    /// # Errors
+    /// Returns `GtsError::InvalidWildcard` if the pattern is invalid.
     pub fn new(pattern: &str) -> Result<Self, GtsError> {
         let p = pattern.trim();
 
         if !p.starts_with(GTS_PREFIX) {
             return Err(GtsError::InvalidWildcard {
-                pattern: pattern.to_string(),
+                pattern: pattern.to_owned(),
                 cause: format!("Does not start with '{GTS_PREFIX}'"),
             });
         }
 
         if p.matches('*').count() > 1 {
             return Err(GtsError::InvalidWildcard {
-                pattern: pattern.to_string(),
-                cause: "The wildcard '*' token is allowed only once".to_string(),
+                pattern: pattern.to_owned(),
+                cause: "The wildcard '*' token is allowed only once".to_owned(),
             });
         }
 
         if p.contains('*') && !p.ends_with(".*") && !p.ends_with("~*") {
             return Err(GtsError::InvalidWildcard {
-                pattern: pattern.to_string(),
-                cause: "The wildcard '*' token is allowed only at the end of the pattern"
-                    .to_string(),
+                pattern: pattern.to_owned(),
+                cause: "The wildcard '*' token is allowed only at the end of the pattern".to_owned(),
             });
         }
 
         // Try to parse as GtsID
         let gts_id = GtsID::new(p).map_err(|e| GtsError::InvalidWildcard {
-            pattern: pattern.to_string(),
+            pattern: pattern.to_owned(),
             cause: e.to_string(),
         })?;
 

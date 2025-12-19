@@ -160,6 +160,7 @@ pub struct GtsOps {
 }
 
 impl GtsOps {
+    #[must_use] 
     pub fn new(path: Option<Vec<String>>, config: Option<String>, verbose: usize) -> Self {
         let cfg = Self::load_config(config);
         let reader: Option<Box<dyn crate::store::GtsReader>> = path.as_ref().map(|p| {
@@ -254,7 +255,7 @@ impl GtsOps {
                 id: String::new(),
                 schema_id: None,
                 is_schema: false,
-                error: "Unable to detect GTS ID in entity".to_string(),
+                error: "Unable to detect GTS ID in entity".to_owned(),
             };
         };
         let entity_id = gts_id.id.clone();
@@ -278,7 +279,7 @@ impl GtsOps {
                     id: String::new(),
                     schema_id: None,
                     is_schema: false,
-                    error: format!("Validation failed: {}", e),
+                    error: format!("Validation failed: {e}"),
                 };
             }
         }
@@ -291,7 +292,7 @@ impl GtsOps {
                     id: String::new(),
                     schema_id: None,
                     is_schema: false,
-                    error: format!("Validation failed: {}", e),
+                    error: format!("Validation failed: {e}"),
                 };
             }
         }
@@ -327,15 +328,16 @@ impl GtsOps {
         }
     }
 
+    #[must_use] 
     pub fn validate_id(&self, gts_id: &str) -> GtsIdValidationResult {
         match GtsID::new(gts_id) {
             Ok(_) => GtsIdValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 valid: true,
                 error: String::new(),
             },
             Err(e) => GtsIdValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 valid: false,
                 error: e.to_string(),
             },
@@ -352,14 +354,14 @@ impl GtsOps {
                     .collect();
 
                 GtsIdParseResult {
-                    id: gts_id.to_string(),
+                    id: gts_id.to_owned(),
                     ok: true,
                     segments,
                     error: String::new(),
                 }
             }
             Err(e) => GtsIdParseResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 ok: false,
                 segments: Vec::new(),
                 error: e.to_string(),
@@ -367,26 +369,28 @@ impl GtsOps {
         }
     }
 
+    #[must_use] 
     pub fn match_id_pattern(&self, candidate: &str, pattern: &str) -> GtsIdMatchResult {
         match (GtsID::new(candidate), GtsWildcard::new(pattern)) {
             (Ok(c), Ok(p)) => {
                 let is_match = c.wildcard_match(&p);
                 GtsIdMatchResult {
-                    candidate: candidate.to_string(),
-                    pattern: pattern.to_string(),
+                    candidate: candidate.to_owned(),
+                    pattern: pattern.to_owned(),
                     is_match,
                     error: String::new(),
                 }
             }
             (Err(e), _) | (_, Err(e)) => GtsIdMatchResult {
-                candidate: candidate.to_string(),
-                pattern: pattern.to_string(),
+                candidate: candidate.to_owned(),
+                pattern: pattern.to_owned(),
                 is_match: false,
                 error: e.to_string(),
             },
         }
     }
 
+    #[must_use] 
     pub fn uuid(&self, gts_id: &str) -> GtsUuidResult {
         match GtsID::new(gts_id) {
             Ok(g) => GtsUuidResult {
@@ -394,7 +398,7 @@ impl GtsOps {
                 uuid: g.to_uuid().to_string(),
             },
             Err(_) => GtsUuidResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 uuid: String::new(),
             },
         }
@@ -403,12 +407,12 @@ impl GtsOps {
     pub fn validate_instance(&mut self, gts_id: &str) -> GtsValidationResult {
         match self.store.validate_instance(gts_id) {
             Ok(()) => GtsValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 ok: true,
                 error: String::new(),
             },
             Err(e) => GtsValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 ok: false,
                 error: e.to_string(),
             },
@@ -418,12 +422,12 @@ impl GtsOps {
     pub fn validate_schema(&mut self, gts_id: &str) -> GtsValidationResult {
         match self.store.validate_schema(gts_id) {
             Ok(()) => GtsValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 ok: true,
                 error: String::new(),
             },
             Err(e) => GtsValidationResult {
-                id: gts_id.to_string(),
+                id: gts_id.to_owned(),
                 ok: false,
                 error: e.to_string(),
             },
@@ -455,11 +459,11 @@ impl GtsOps {
         match self.store.cast(from_id, to_schema_id) {
             Ok(result) => result,
             Err(e) => GtsEntityCastResult {
-                from_id: from_id.to_string(),
-                to_id: to_schema_id.to_string(),
-                old: from_id.to_string(),
-                new: to_schema_id.to_string(),
-                direction: "unknown".to_string(),
+                from_id: from_id.to_owned(),
+                to_id: to_schema_id.to_owned(),
+                old: from_id.to_owned(),
+                new: to_schema_id.to_owned(),
+                direction: "unknown".to_owned(),
                 added_properties: Vec::new(),
                 removed_properties: Vec::new(),
                 changed_properties: Vec::new(),
@@ -475,6 +479,7 @@ impl GtsOps {
         }
     }
 
+    #[must_use] 
     pub fn query(&self, expr: &str, limit: usize) -> GtsStoreQueryResult {
         self.store.query(expr, limit)
     }
@@ -486,7 +491,7 @@ impl GtsOps {
                     entity.resolve_path(&path)
                 } else {
                     JsonPathResolver::new(gts.clone(), Value::Null)
-                        .failure(&path, &format!("Entity not found: {}", gts))
+                        .failure(&path, &format!("Entity not found: {gts}"))
                 }
             }
             Ok((gts, None)) => JsonPathResolver::new(gts, Value::Null)
@@ -495,6 +500,7 @@ impl GtsOps {
         }
     }
 
+    #[must_use] 
     pub fn extract_id(&self, content: &Value) -> GtsExtractIdResult {
         let entity = GtsEntity::new(
             None,
@@ -528,7 +534,7 @@ impl GtsOps {
                 id: entity
                     .gts_id
                     .as_ref()
-                    .map_or_else(|| gts_id.to_string(), |g| g.id.clone()),
+                    .map_or_else(|| gts_id.to_owned(), |g| g.id.clone()),
                 schema_id: entity.schema_id.clone(),
                 is_schema: entity.is_schema,
                 content: Some(entity.content.clone()),
@@ -540,11 +546,12 @@ impl GtsOps {
                 schema_id: None,
                 is_schema: false,
                 content: None,
-                error: format!("Entity '{}' not found", gts_id),
+                error: format!("Entity '{gts_id}' not found"),
             },
         }
     }
 
+    #[must_use] 
     pub fn get_entities(&self, limit: usize) -> GtsEntitiesListResult {
         let all_entities: Vec<_> = self.store.items().collect();
         let total = all_entities.len();
@@ -568,6 +575,7 @@ impl GtsOps {
         }
     }
 
+    #[must_use] 
     pub fn list(&self, limit: usize) -> GtsEntitiesListResult {
         self.get_entities(limit)
     }

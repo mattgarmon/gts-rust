@@ -15,6 +15,7 @@ pub struct JsonPathResolver {
 }
 
 impl JsonPathResolver {
+    #[must_use] 
     pub fn new(gts_id: String, content: Value) -> Self {
         JsonPathResolver {
             gts_id,
@@ -91,7 +92,7 @@ impl JsonPathResolver {
                     let p = if prefix.is_empty() {
                         k.clone()
                     } else {
-                        format!("{}.{}", prefix, k)
+                        format!("{prefix}.{k}")
                     };
                     out.push(p.clone());
                     if v.is_object() || v.is_array() {
@@ -102,9 +103,9 @@ impl JsonPathResolver {
             Value::Array(arr) => {
                 for (i, v) in arr.iter().enumerate() {
                     let p = if prefix.is_empty() {
-                        format!("[{}]", i)
+                        format!("[{i}]")
                     } else {
-                        format!("{}[{}]", prefix, i)
+                        format!("{prefix}[{i}]")
                     };
                     out.push(p.clone());
                     if v.is_object() || v.is_array() {
@@ -124,7 +125,7 @@ impl JsonPathResolver {
 
     #[must_use]
     pub fn resolve(mut self, path: &str) -> Self {
-        self.path = path.to_string();
+        path.clone_into(&mut self.path);
         self.value = None;
         self.resolved = false;
         self.error = None;
@@ -141,20 +142,20 @@ impl JsonPathResolver {
                         if let Ok(i) = idx_str.parse::<usize>() {
                             i
                         } else {
-                            self.error = Some(format!("Expected list index at segment '{}'", p));
+                            self.error = Some(format!("Expected list index at segment '{p}'"));
                             self.available_fields = Some(Self::collect_from(&cur));
                             return self;
                         }
                     } else if let Ok(i) = p.parse::<usize>() {
                         i
                     } else {
-                        self.error = Some(format!("Expected list index at segment '{}'", p));
+                        self.error = Some(format!("Expected list index at segment '{p}'"));
                         self.available_fields = Some(Self::collect_from(&cur));
                         return self;
                     };
 
                     if idx >= arr.len() {
-                        self.error = Some(format!("Index out of range at segment '{}'", p));
+                        self.error = Some(format!("Index out of range at segment '{p}'"));
                         self.available_fields = Some(Self::collect_from(&cur));
                         return self;
                     }
@@ -164,8 +165,7 @@ impl JsonPathResolver {
                 Value::Object(map) => {
                     if p.starts_with('[') && p.ends_with(']') {
                         self.error = Some(format!(
-                            "Path not found at segment '{}' in '{}', see available fields",
-                            p, path
+                            "Path not found at segment '{p}' in '{path}', see available fields"
                         ));
                         self.available_fields = Some(Self::collect_from(&cur));
                         return self;
@@ -175,15 +175,14 @@ impl JsonPathResolver {
                         cur = v.clone();
                     } else {
                         self.error = Some(format!(
-                            "Path not found at segment '{}' in '{}', see available fields",
-                            p, path
+                            "Path not found at segment '{p}' in '{path}', see available fields"
                         ));
                         self.available_fields = Some(Self::collect_from(&cur));
                         return self;
                     }
                 }
                 _ => {
-                    self.error = Some(format!("Cannot descend into {:?} at segment '{}'", cur, p));
+                    self.error = Some(format!("Cannot descend into {cur:?} at segment '{p}'"));
                     self.available_fields = if cur.is_object() || cur.is_array() {
                         Some(Self::collect_from(&cur))
                     } else {
@@ -201,10 +200,10 @@ impl JsonPathResolver {
 
     #[must_use]
     pub fn failure(mut self, path: &str, error: &str) -> Self {
-        self.path = path.to_string();
+        path.clone_into(&mut self.path);
         self.value = None;
         self.resolved = false;
-        self.error = Some(error.to_string());
+        self.error = Some(error.to_owned());
         self.available_fields = Some(Vec::new());
         self
     }

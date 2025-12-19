@@ -43,6 +43,10 @@ pub struct GtsEntityCastResult {
 }
 
 impl GtsEntityCastResult {
+    /// Casts an instance from one schema to another.
+    ///
+    /// # Errors
+    /// Returns `SchemaCastError` if the cast fails.
     pub fn cast(
         from_instance_id: &str,
         to_schema_id: &str,
@@ -76,10 +80,10 @@ impl GtsEntityCastResult {
                 Ok(result) => result,
                 Err(e) => {
                     return Ok(GtsEntityCastResult {
-                        from_id: from_instance_id.to_string(),
-                        to_id: to_schema_id.to_string(),
-                        old: from_instance_id.to_string(),
-                        new: to_schema_id.to_string(),
+                        from_id: from_instance_id.to_owned(),
+                        to_id: to_schema_id.to_owned(),
+                        old: from_instance_id.to_owned(),
+                        new: to_schema_id.to_owned(),
                         direction,
                         added_properties: Vec::new(),
                         removed_properties: Vec::new(),
@@ -111,10 +115,10 @@ impl GtsEntityCastResult {
         removed_sorted.dedup();
 
         Ok(GtsEntityCastResult {
-            from_id: from_instance_id.to_string(),
-            to_id: to_schema_id.to_string(),
-            old: from_instance_id.to_string(),
-            new: to_schema_id.to_string(),
+            from_id: from_instance_id.to_owned(),
+            to_id: to_schema_id.to_owned(),
+            old: from_instance_id.to_owned(),
+            new: to_schema_id.to_owned(),
             direction,
             added_properties: added_sorted,
             removed_properties: removed_sorted,
@@ -130,6 +134,7 @@ impl GtsEntityCastResult {
         })
     }
 
+    #[must_use] 
     pub fn infer_direction(from_id: &str, to_id: &str) -> String {
         if let (Ok(gid_from), Ok(gid_to)) = (GtsID::new(from_id), GtsID::new(to_id)) {
             if let (Some(from_seg), Some(to_seg)) = (
@@ -138,16 +143,16 @@ impl GtsEntityCastResult {
             ) {
                 if let (Some(from_minor), Some(to_minor)) = (from_seg.ver_minor, to_seg.ver_minor) {
                     if to_minor > from_minor {
-                        return "up".to_string();
+                        return "up".to_owned();
                     }
                     if to_minor < from_minor {
-                        return "down".to_string();
+                        return "down".to_owned();
                     }
-                    return "none".to_string();
+                    return "none".to_owned();
                 }
             }
         }
-        "unknown".to_string()
+        "unknown".to_owned()
     }
 
     fn effective_object_schema(s: &Value) -> Value {
@@ -172,7 +177,7 @@ impl GtsEntityCastResult {
         s.clone()
     }
 
-    #[allow(clippy::type_complexity, clippy::too_many_lines)]
+    #[allow(clippy::type_complexity, clippy::too_many_lines, clippy::cognitive_complexity)]
     fn cast_instance_to_schema(
         instance: &Map<String, Value>,
         schema: &Value,
@@ -184,7 +189,7 @@ impl GtsEntityCastResult {
 
         let schema_obj = schema
             .as_object()
-            .ok_or_else(|| SchemaCastError::CastError("Schema must be an object".to_string()))?;
+            .ok_or_else(|| SchemaCastError::CastError("Schema must be an object".to_owned()))?;
 
         let target_props = schema_obj
             .get("properties")
@@ -219,18 +224,17 @@ impl GtsEntityCastResult {
                             let path = if base_path.is_empty() {
                                 prop.clone()
                             } else {
-                                format!("{}.{}", base_path, prop)
+                                format!("{base_path}.{prop}")
                             };
                             added.push(path);
                         } else {
                             let path = if base_path.is_empty() {
                                 prop.clone()
                             } else {
-                                format!("{}.{}", base_path, prop)
+                                format!("{base_path}.{prop}")
                             };
                             incompatibility_reasons.push(format!(
-                                "Missing required property '{}' and no default is defined",
-                                path
+                                "Missing required property '{path}' and no default is defined"
                             ));
                         }
                     }
@@ -250,7 +254,7 @@ impl GtsEntityCastResult {
                         let path = if base_path.is_empty() {
                             prop.clone()
                         } else {
-                            format!("{}.{}", base_path, prop)
+                            format!("{base_path}.{prop}")
                         };
                         added.push(path);
                     }
@@ -287,7 +291,7 @@ impl GtsEntityCastResult {
                     let path = if base_path.is_empty() {
                         prop.clone()
                     } else {
-                        format!("{}.{}", base_path, prop)
+                        format!("{base_path}.{prop}")
                     };
                     removed.push(path);
                 }
@@ -305,7 +309,7 @@ impl GtsEntityCastResult {
                                 let new_base = if base_path.is_empty() {
                                     prop.clone()
                                 } else {
-                                    format!("{}.{}", base_path, prop)
+                                    format!("{base_path}.{prop}")
                                 };
                                 let (new_obj, add_sub, rem_sub, new_reasons) =
                                     Self::cast_instance_to_schema(
@@ -331,9 +335,9 @@ impl GtsEntityCastResult {
                                             for (idx, item) in val_arr.iter().enumerate() {
                                                 if let Some(item_obj) = item.as_object() {
                                                     let new_base = if base_path.is_empty() {
-                                                        format!("{}[{}]", prop, idx)
+                                                        format!("{prop}[{idx}]")
                                                     } else {
-                                                        format!("{}.{}[{}]", base_path, prop, idx)
+                                                        format!("{base_path}.{prop}[{idx}]")
                                                     };
                                                     let (new_item, add_sub, rem_sub, new_reasons) =
                                                         Self::cast_instance_to_schema(
@@ -363,10 +367,11 @@ impl GtsEntityCastResult {
         Ok((result, added, removed, incompatibility_reasons))
     }
 
+    #[must_use] 
     pub fn flatten_schema(schema: &Value) -> Value {
         let mut result = Map::new();
-        result.insert("properties".to_string(), Value::Object(Map::new()));
-        result.insert("required".to_string(), Value::Array(Vec::new()));
+        result.insert("properties".to_owned(), Value::Object(Map::new()));
+        result.insert("required".to_owned(), Value::Array(Vec::new()));
 
         if let Some(obj) = schema.as_object() {
             // Merge allOf schemas
@@ -400,7 +405,7 @@ impl GtsEntityCastResult {
                             // Preserve additionalProperties
                             if let Some(additional) = flat_obj.get("additionalProperties") {
                                 result
-                                    .insert("additionalProperties".to_string(), additional.clone());
+                                    .insert("additionalProperties".to_owned(), additional.clone());
                             }
                         }
                     }
@@ -430,7 +435,7 @@ impl GtsEntityCastResult {
             }
             // Preserve additionalProperties from top level
             if let Some(additional) = obj.get("additionalProperties") {
-                result.insert("additionalProperties".to_string(), additional.clone());
+                result.insert("additionalProperties".to_owned(), additional.clone());
             }
         }
 
@@ -454,13 +459,11 @@ impl GtsEntityCastResult {
         if let (Some(old_m), Some(new_m)) = (old_min, new_min) {
             if check_tightening && new_m > old_m {
                 errors.push(format!(
-                    "Property '{}' {} increased from {} to {}",
-                    prop, min_key, old_m, new_m
+                    "Property '{prop}' {min_key} increased from {old_m} to {new_m}"
                 ));
             } else if !check_tightening && new_m < old_m {
                 errors.push(format!(
-                    "Property '{}' {} decreased from {} to {}",
-                    prop, min_key, old_m, new_m
+                    "Property '{prop}' {min_key} decreased from {old_m} to {new_m}"
                 ));
             }
         } else if let (true, None, Some(new_m)) = (check_tightening, old_min, new_min) {
@@ -469,8 +472,7 @@ impl GtsEntityCastResult {
             ));
         } else if !check_tightening && old_min.is_some() && new_min.is_none() {
             errors.push(format!(
-                "Property '{}' removed {} constraint",
-                prop, min_key
+                "Property '{prop}' removed {min_key} constraint"
             ));
         }
 
@@ -481,13 +483,11 @@ impl GtsEntityCastResult {
         if let (Some(old_m), Some(new_m)) = (old_max, new_max) {
             if check_tightening && new_m < old_m {
                 errors.push(format!(
-                    "Property '{}' {} decreased from {} to {}",
-                    prop, max_key, old_m, new_m
+                    "Property '{prop}' {max_key} decreased from {old_m} to {new_m}"
                 ));
             } else if !check_tightening && new_m > old_m {
                 errors.push(format!(
-                    "Property '{}' {} increased from {} to {}",
-                    prop, max_key, old_m, new_m
+                    "Property '{prop}' {max_key} increased from {old_m} to {new_m}"
                 ));
             }
         } else if let (true, None, Some(new_m)) = (check_tightening, old_max, new_max) {
@@ -496,8 +496,7 @@ impl GtsEntityCastResult {
             ));
         } else if !check_tightening && old_max.is_some() && new_max.is_none() {
             errors.push(format!(
-                "Property '{}' removed {} constraint",
-                prop, max_key
+                "Property '{prop}' removed {max_key} constraint"
             ));
         }
 
@@ -552,6 +551,7 @@ impl GtsEntityCastResult {
         errors
     }
 
+    #[must_use] 
     pub fn check_backward_compatibility(
         old_schema: &Value,
         new_schema: &Value,
@@ -559,6 +559,7 @@ impl GtsEntityCastResult {
         Self::check_schema_compatibility(old_schema, new_schema, true)
     }
 
+    #[must_use] 
     pub fn check_forward_compatibility(
         old_schema: &Value,
         new_schema: &Value,
@@ -642,8 +643,7 @@ impl GtsEntityCastResult {
                 if let (Some(ot), Some(nt)) = (old_type, new_type) {
                     if ot != nt {
                         errors.push(format!(
-                            "Property '{}' type changed from {} to {}",
-                            prop, ot, nt
+                            "Property '{prop}' type changed from {ot} to {nt}"
                         ));
                     }
                 }
@@ -670,8 +670,7 @@ impl GtsEntityCastResult {
                             let values: Vec<_> =
                                 added_enum_values.iter().map(|s| s.as_str()).collect();
                             errors.push(format!(
-                                "Property '{}' added enum values: {:?}",
-                                prop, values
+                                "Property '{prop}' added enum values: {values:?}"
                             ));
                         }
                     } else {
@@ -682,8 +681,7 @@ impl GtsEntityCastResult {
                             let values: Vec<_> =
                                 removed_enum_values.iter().map(|s| s.as_str()).collect();
                             errors.push(format!(
-                                "Property '{}' removed enum values: {:?}",
-                                prop, values
+                                "Property '{prop}' removed enum values: {values:?}"
                             ));
                         }
                     }
@@ -711,7 +709,7 @@ impl GtsEntityCastResult {
                     );
                     if !nested_compat {
                         for err in nested_errors {
-                            errors.push(format!("Property '{}': {}", prop, err));
+                            errors.push(format!("Property '{prop}': {err}"));
                         }
                     }
                 }

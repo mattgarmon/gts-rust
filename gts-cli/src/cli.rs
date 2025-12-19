@@ -144,7 +144,7 @@ pub async fn run() -> Result<()> {
 
     match cli.command {
         Commands::Server { host, port } => {
-            println!("starting the server @ http://{}:{}", host, port);
+            println!("starting the server @ http://{host}:{port}");
             if cli.verbose == 0 {
                 println!("use --verbose to see server logs");
             }

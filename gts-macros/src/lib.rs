@@ -132,7 +132,7 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
     let property_names: Vec<String> = args
         .properties
         .split(',')
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
         .collect();
 
@@ -170,8 +170,7 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
             return syn::Error::new_spanned(
                 &input.ident,
                 format!(
-                    "struct_to_gts_schema: Property '{}' not found in struct. Available fields: {:?}",
-                    prop, available_fields
+                    "struct_to_gts_schema: Property '{prop}' not found in struct. Available fields: {available_fields:?}"
                 ),
             )
             .to_compile_error()

@@ -74,6 +74,10 @@ impl GtsStore {
         }
     }
 
+    /// Registers an entity in the store.
+    ///
+    /// # Errors
+    /// Returns `StoreError::InvalidEntity` if the entity has no valid GTS ID.
     pub fn register(&mut self, entity: GtsEntity) -> Result<(), StoreError> {
         let id = entity
             .gts_id
@@ -85,6 +89,10 @@ impl GtsStore {
         Ok(())
     }
 
+    /// Registers a schema in the store.
+    ///
+    /// # Errors
+    /// Returns `StoreError::InvalidSchemaId` if the `type_id` doesn't end with '~'.
     pub fn register_schema(&mut self, type_id: &str, schema: &Value) -> Result<(), StoreError> {
         if !type_id.ends_with('~') {
             return Err(StoreError::InvalidSchemaId);
@@ -102,7 +110,7 @@ impl GtsStore {
             None,
             None,
         );
-        self.by_id.insert(type_id.to_string(), entity);
+        self.by_id.insert(type_id.to_owned(), entity);
         Ok(())
     }
 
@@ -115,7 +123,7 @@ impl GtsStore {
         // Try to fetch from reader
         if let Some(ref reader) = self.reader {
             if let Some(entity) = reader.read_by_id(entity_id) {
-                self.by_id.insert(entity_id.to_string(), entity);
+                self.by_id.insert(entity_id.to_owned(), entity);
                 return self.by_id.get(entity_id);
             }
         }
@@ -123,11 +131,15 @@ impl GtsStore {
         None
     }
 
+    /// Gets the content of a schema by its type ID.
+    ///
+    /// # Errors
+    /// Returns `StoreError::SchemaNotFound` if the schema is not found.
     pub fn get_schema_content(&mut self, type_id: &str) -> Result<Value, StoreError> {
         if let Some(entity) = self.get(type_id) {
             return Ok(entity.content.clone());
         }
-        Err(StoreError::SchemaNotFound(type_id.to_string()))
+        Err(StoreError::SchemaNotFound(type_id.to_owned()))
     }
 
     pub fn items(&self) -> impl Iterator<Item = (&String, &GtsEntity)> {
@@ -158,7 +170,7 @@ impl GtsStore {
 
                             // Otherwise, merge the resolved schema with other properties
                             if let Value::Object(resolved_map) = resolved {
-                                let mut merged = resolved_map.clone();
+                                let mut merged = resolved_map;
                                 for (k, v) in map {
                                     if k != "$ref" {
                                         merged.insert(k.clone(), self.resolve_schema_refs(v));
@@ -221,19 +233,17 @@ impl GtsStore {
     fn validate_schema_x_gts_refs(&mut self, gts_id: &str) -> Result<(), StoreError> {
         if !gts_id.ends_with('~') {
             return Err(StoreError::SchemaNotFound(format!(
-                "ID '{}' is not a schema (must end with '~')",
-                gts_id
+                "ID '{gts_id}' is not a schema (must end with '~')"
             )));
         }
 
         let schema_entity = self
             .get(gts_id)
-            .ok_or_else(|| StoreError::SchemaNotFound(gts_id.to_string()))?;
+            .ok_or_else(|| StoreError::SchemaNotFound(gts_id.to_owned()))?;
 
         if !schema_entity.is_schema {
             return Err(StoreError::SchemaNotFound(format!(
-                "Entity '{}' is not a schema",
-                gts_id
+                "Entity '{gts_id}' is not a schema"
             )));
         }
 
@@ -262,30 +272,31 @@ impl GtsStore {
         Ok(())
     }
 
+    /// Validates a schema against JSON Schema meta-schema and x-gts-ref constraints.
+    ///
+    /// # Errors
+    /// Returns `StoreError` if validation fails.
     pub fn validate_schema(&mut self, gts_id: &str) -> Result<(), StoreError> {
         if !gts_id.ends_with('~') {
             return Err(StoreError::SchemaNotFound(format!(
-                "ID '{}' is not a schema (must end with '~')",
-                gts_id
+                "ID '{gts_id}' is not a schema (must end with '~')"
             )));
         }
 
         let schema_entity = self
             .get(gts_id)
-            .ok_or_else(|| StoreError::SchemaNotFound(gts_id.to_string()))?;
+            .ok_or_else(|| StoreError::SchemaNotFound(gts_id.to_owned()))?;
 
         if !schema_entity.is_schema {
             return Err(StoreError::SchemaNotFound(format!(
-                "Entity '{}' is not a schema",
-                gts_id
+                "Entity '{gts_id}' is not a schema"
             )));
         }
 
         let schema_content = schema_entity.content.clone();
         if !schema_content.is_object() {
             return Err(StoreError::SchemaNotFound(format!(
-                "Schema '{}' content must be a dictionary",
-                gts_id
+                "Schema '{gts_id}' content must be a dictionary"
             )));
         }
 
@@ -310,8 +321,7 @@ impl GtsStore {
         // For now, we'll do a basic validation by trying to compile the schema
         jsonschema::JSONSchema::compile(&schema_for_validation).map_err(|e| {
             StoreError::ValidationError(format!(
-                "JSON Schema validation failed for '{}': {}",
-                gts_id, e
+                "JSON Schema validation failed for '{gts_id}': {e}"
             ))
         })?;
 
@@ -323,12 +333,16 @@ impl GtsStore {
         Ok(())
     }
 
+    /// Validates an instance against its schema.
+    ///
+    /// # Errors
+    /// Returns `StoreError` if validation fails.
     pub fn validate_instance(&mut self, gts_id: &str) -> Result<(), StoreError> {
-        let gid = GtsID::new(gts_id).map_err(|_| StoreError::ObjectNotFound(gts_id.to_string()))?;
+        let gid = GtsID::new(gts_id).map_err(|_| StoreError::ObjectNotFound(gts_id.to_owned()))?;
 
         let obj = self
             .get(&gid.id)
-            .ok_or_else(|| StoreError::ObjectNotFound(gts_id.to_string()))?
+            .ok_or_else(|| StoreError::ObjectNotFound(gts_id.to_owned()))?
             .clone();
 
         let schema_id = obj
@@ -361,7 +375,7 @@ impl GtsStore {
 
         let compiled = jsonschema::JSONSchema::compile(&resolved_schema).map_err(|e| {
             tracing::error!("Schema compilation error: {}", e);
-            StoreError::ValidationError(format!("Invalid schema: {}", e))
+            StoreError::ValidationError(format!("Invalid schema: {e}"))
         })?;
 
         compiled.validate(&obj.content).map_err(|e| {
@@ -392,6 +406,10 @@ impl GtsStore {
         Ok(())
     }
 
+    /// Casts an entity from one schema to another.
+    ///
+    /// # Errors
+    /// Returns `StoreError` if the cast fails.
     pub fn cast(
         &mut self,
         from_id: &str,
@@ -399,16 +417,16 @@ impl GtsStore {
     ) -> Result<GtsEntityCastResult, StoreError> {
         let from_entity = self
             .get(from_id)
-            .ok_or_else(|| StoreError::EntityNotFound(from_id.to_string()))?
+            .ok_or_else(|| StoreError::EntityNotFound(from_id.to_owned()))?
             .clone();
 
         if from_entity.is_schema {
-            return Err(StoreError::CastFromSchemaNotAllowed(from_id.to_string()));
+            return Err(StoreError::CastFromSchemaNotAllowed(from_id.to_owned()));
         }
 
         let to_schema = self
             .get(target_schema_id)
-            .ok_or_else(|| StoreError::ObjectNotFound(target_schema_id.to_string()))?
+            .ok_or_else(|| StoreError::ObjectNotFound(target_schema_id.to_owned()))?
             .clone();
 
         // Get the source schema
@@ -424,7 +442,7 @@ impl GtsStore {
             let schema_id = from_entity
                 .schema_id
                 .as_ref()
-                .ok_or_else(|| StoreError::SchemaForInstanceNotFound(from_id.to_string()))?;
+                .ok_or_else(|| StoreError::SchemaForInstanceNotFound(from_id.to_owned()))?;
             let schema = self
                 .get(schema_id)
                 .ok_or_else(|| StoreError::ObjectNotFound(schema_id.clone()))?
@@ -451,20 +469,20 @@ impl GtsStore {
 
         let (Some(old_ent), Some(new_ent)) = (old_entity, new_entity) else {
             return GtsEntityCastResult {
-                from_id: old_schema_id.to_string(),
-                to_id: new_schema_id.to_string(),
-                old: old_schema_id.to_string(),
-                new: new_schema_id.to_string(),
-                direction: "unknown".to_string(),
+                from_id: old_schema_id.to_owned(),
+                to_id: new_schema_id.to_owned(),
+                old: old_schema_id.to_owned(),
+                new: new_schema_id.to_owned(),
+                direction: "unknown".to_owned(),
                 added_properties: Vec::new(),
                 removed_properties: Vec::new(),
                 changed_properties: Vec::new(),
                 is_fully_compatible: false,
                 is_backward_compatible: false,
                 is_forward_compatible: false,
-                incompatibility_reasons: vec!["Schema not found".to_string()],
-                backward_errors: vec!["Schema not found".to_string()],
-                forward_errors: vec!["Schema not found".to_string()],
+                incompatibility_reasons: vec!["Schema not found".to_owned()],
+                backward_errors: vec!["Schema not found".to_owned()],
+                forward_errors: vec!["Schema not found".to_owned()],
                 casted_entity: None,
                 error: None,
             };
@@ -483,10 +501,10 @@ impl GtsStore {
         let direction = GtsEntityCastResult::infer_direction(old_schema_id, new_schema_id);
 
         GtsEntityCastResult {
-            from_id: old_schema_id.to_string(),
-            to_id: new_schema_id.to_string(),
-            old: old_schema_id.to_string(),
-            new: new_schema_id.to_string(),
+            from_id: old_schema_id.to_owned(),
+            to_id: new_schema_id.to_owned(),
+            old: old_schema_id.to_owned(),
+            new: new_schema_id.to_owned(),
             direction,
             added_properties: Vec::new(),
             removed_properties: Vec::new(),
@@ -513,13 +531,13 @@ impl GtsStore {
         seen_gts_ids: &mut std::collections::HashSet<String>,
     ) -> Value {
         let mut ret = serde_json::Map::new();
-        ret.insert("id".to_string(), Value::String(gts_id.to_string()));
+        ret.insert("id".to_owned(), Value::String(gts_id.to_owned()));
 
         if seen_gts_ids.contains(gts_id) {
             return Value::Object(ret);
         }
 
-        seen_gts_ids.insert(gts_id.to_string());
+        seen_gts_ids.insert(gts_id.to_owned());
 
         // Clone the entity to avoid borrowing issues
         let entity_clone = self.get(gts_id).cloned();
@@ -544,7 +562,7 @@ impl GtsStore {
             }
 
             if !refs.is_empty() {
-                ret.insert("refs".to_string(), Value::Object(refs));
+                ret.insert("refs".to_owned(), Value::Object(refs));
             }
 
             if let Some(ref schema_id) = entity.schema_id {
@@ -553,7 +571,7 @@ impl GtsStore {
                 {
                     let schema_id_clone = schema_id.clone();
                     ret.insert(
-                        "schema_id".to_string(),
+                        "schema_id".to_owned(),
                         self.gts2node(&schema_id_clone, seen_gts_ids),
                     );
                 }
@@ -563,8 +581,8 @@ impl GtsStore {
                     .and_then(|e| e.as_array())
                     .cloned()
                     .unwrap_or_default();
-                errors.push(Value::String("Schema not recognized".to_string()));
-                ret.insert("errors".to_string(), Value::Array(errors));
+                errors.push(Value::String("Schema not recognized".to_owned()));
+                ret.insert("errors".to_owned(), Value::Array(errors));
             }
         } else {
             let mut errors = ret
@@ -572,13 +590,14 @@ impl GtsStore {
                 .and_then(|e| e.as_array())
                 .cloned()
                 .unwrap_or_default();
-            errors.push(Value::String("Entity not found".to_string()));
-            ret.insert("errors".to_string(), Value::Array(errors));
+            errors.push(Value::String("Entity not found".to_owned()));
+            ret.insert("errors".to_owned(), Value::Array(errors));
         }
 
         Value::Object(ret)
     }
 
+    #[must_use] 
     pub fn query(&self, expr: &str, limit: usize) -> GtsStoreQueryResult {
         let mut result = GtsStoreQueryResult {
             error: String::new(),
@@ -655,7 +674,7 @@ impl GtsStore {
         for part in parts {
             if let Some((k, v)) = part.split_once('=') {
                 let v = v.trim().trim_matches('"').trim_matches('\'');
-                filters.insert(k.trim().to_string(), v.to_string());
+                filters.insert(k.trim().to_owned(), v.to_owned());
             }
         }
 
@@ -671,12 +690,12 @@ impl GtsStore {
                 return (
                     None,
                     None,
-                    "Invalid query: wildcard patterns must end with .* or ~*".to_string(),
+                    "Invalid query: wildcard patterns must end with .* or ~*".to_owned(),
                 );
             }
             match GtsWildcard::new(base_pattern) {
                 Ok(pattern) => (Some(pattern), None, String::new()),
-                Err(e) => (None, None, format!("Invalid query: {}", e)),
+                Err(e) => (None, None, format!("Invalid query: {e}")),
             }
         } else {
             match GtsID::new(base_pattern) {
@@ -685,13 +704,13 @@ impl GtsStore {
                         (
                             None,
                             None,
-                            "Invalid query: GTS ID has no valid segments".to_string(),
+                            "Invalid query: GTS ID has no valid segments".to_owned(),
                         )
                     } else {
                         (None, Some(gts_id), String::new())
                     }
                 }
-                Err(e) => (None, None, format!("Invalid query: {}", e)),
+                Err(e) => (None, None, format!("Invalid query: {e}")),
             }
         }
     }
@@ -734,7 +753,7 @@ impl GtsStore {
                     if entity_value.is_empty() || entity_value == "null" {
                         return false;
                     }
-                } else if entity_value != format!("\"{}\"", value) && entity_value != *value {
+                } else if entity_value != format!("\"{value}\"") && entity_value != *value {
                     return false;
                 }
             }

@@ -7,11 +7,11 @@ use walkdir::WalkDir;
 
 /// Generate GTS schemas from Rust source code with `#[struct_to_gts_schema]` annotations
 pub fn generate_schemas_from_rust(source: &str, output: Option<&str>) -> Result<()> {
-    println!("Scanning Rust source files in: {}", source);
+    println!("Scanning Rust source files in: {source}");
 
     let source_path = Path::new(source);
     if !source_path.exists() {
-        bail!("Source path does not exist: {}", source);
+        bail!("Source path does not exist: {source}");
     }
 
     // Canonicalize source path to detect path traversal attempts
@@ -35,15 +35,15 @@ pub fn generate_schemas_from_rust(source: &str, output: Option<&str>) -> Result<
                     extract_and_generate_schemas(&content, output, &source_canonical, path)?;
                 schemas_generated += results.len();
                 for (schema_id, file_path) in results {
-                    println!("  Generated schema: {} @ {}", schema_id, file_path);
+                    println!("  Generated schema: {schema_id} @ {file_path}");
                 }
             }
         }
     }
 
     println!("\nSummary:");
-    println!("  Files scanned: {}", files_scanned);
-    println!("  Schemas generated: {}", schemas_generated);
+    println!("  Files scanned: {files_scanned}");
+    println!("  Schemas generated: {schemas_generated}");
 
     if schemas_generated == 0 {
         println!("\n- No schemas found. Make sure your structs are annotated with `#[struct_to_gts_schema(...)]`");
@@ -134,7 +134,7 @@ fn extract_and_generate_schemas(
         for field_cap in field_re.captures_iter(struct_body) {
             let field_name = &field_cap[1];
             let field_type = field_cap[2].trim();
-            field_types.insert(field_name.to_string(), field_type.to_string());
+            field_types.insert(field_name.to_owned(), field_type.to_owned());
         }
 
         // Build JSON schema
@@ -155,7 +155,7 @@ fn extract_and_generate_schemas(
         fs::write(&output_path, serde_json::to_string_pretty(&schema)?)?;
 
         // Add to results (schema_id, file_path)
-        results.push((schema_id.to_string(), output_path.display().to_string()));
+        results.push((schema_id.to_owned(), output_path.display().to_string()));
     }
 
     Ok(results)
@@ -183,10 +183,10 @@ fn build_json_schema(
                 prop_schema["format"] = json!(fmt);
             }
 
-            schema_properties.insert((*prop).to_string(), prop_schema);
+            schema_properties.insert((*prop).to_owned(), prop_schema);
 
             if is_required {
-                required.push((*prop).to_string());
+                required.push((*prop).to_owned());
             }
         }
     }

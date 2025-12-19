@@ -17,6 +17,7 @@ pub struct GtsFileReader {
 }
 
 impl GtsFileReader {
+    #[must_use] 
     pub fn new(path: &[String], cfg: Option<GtsConfig>) -> Self {
         let paths = path
             .iter()
@@ -31,6 +32,7 @@ impl GtsFileReader {
         }
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn collect_files(&mut self) {
         let mut seen = std::collections::HashSet::new();
         let mut collected = Vec::new();
@@ -41,7 +43,7 @@ impl GtsFileReader {
             if resolved_path.is_file() {
                 if let Some(ext) = resolved_path.extension() {
                     let ext_str = ext.to_string_lossy().to_lowercase();
-                    if VALID_EXTENSIONS.contains(&format!(".{}", ext_str).as_str()) {
+                    if VALID_EXTENSIONS.contains(&format!(".{ext_str}").as_str()) {
                         let rp = resolved_path.to_string_lossy().to_string();
                         if !seen.contains(&rp) {
                             seen.insert(rp.clone());
@@ -70,7 +72,7 @@ impl GtsFileReader {
                     if path.is_file() {
                         if let Some(ext) = path.extension() {
                             let ext_str = ext.to_string_lossy().to_lowercase();
-                            if VALID_EXTENSIONS.contains(&format!(".{}", ext_str).as_str()) {
+                            if VALID_EXTENSIONS.contains(&format!(".{ext_str}").as_str()) {
                                 let rp = path
                                     .canonicalize()
                                     .unwrap_or_else(|_| path.to_path_buf())
@@ -116,6 +118,7 @@ impl GtsFileReader {
         Ok(value)
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn process_file(&self, file_path: &Path) -> Vec<GtsEntity> {
         let mut entities = Vec::new();
 
@@ -202,6 +205,7 @@ impl GtsReader for GtsFileReader {
             self.paths
         );
 
+        #[allow(clippy::needless_collect)]
         let entities: Vec<GtsEntity> = self
             .files
             .iter()
