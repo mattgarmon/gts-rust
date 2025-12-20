@@ -87,7 +87,7 @@ impl Parse for GtsSchemaArgs {
 /// The macro generates these associated items:
 ///
 /// - `GTS_SCHEMA_JSON: &'static str` - The JSON Schema with `$id` set to `schema_id`
-/// - `GTS_MAKE_INSTANCE_ID(segment: &str) -> String` - Generate an instance ID by appending
+/// - `make_gts_instance_id(segment: &str) -> gts::GtsInstanceId` - Generate an instance ID by appending
 ///   a segment to the schema ID. The segment must be a valid GTS segment (e.g., "a.b.c.v1")
 ///
 /// # Arguments
@@ -117,8 +117,8 @@ impl Parse for GtsSchemaArgs {
 ///
 /// // Runtime usage:
 /// let schema = User::GTS_SCHEMA_JSON;
-/// let instance_id = User::GTS_MAKE_INSTANCE_ID("vendor.marketplace.orders.order_created.v1");
-/// assert_eq!(instance_id, "gts.x.core.events.topic.v1~vendor.marketplace.orders.order_created.v1");
+/// let instance_id = User::make_gts_instance_id("vendor.marketplace.orders.order_created.v1");
+/// assert_eq!(instance_id.as_ref(), "gts.x.core.events.topic.v1~vendor.marketplace.orders.order_created.v1");
 /// ```
 #[proc_macro_attribute]
 #[allow(clippy::too_many_lines, clippy::missing_panics_doc)]
@@ -288,18 +288,18 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
             ///
             /// # Returns
             ///
-            /// A string in the format: `{schema_id}{segment}`
+            /// A [`gts::GtsInstanceId`] containing `{schema_id}{segment}`
             ///
             /// # Example
             ///
             /// ```ignore
-            /// let id = User::GTS_MAKE_INSTANCE_ID("123.v1");
-            /// // Returns: "gts.x.myapp.entities.user.v1~123.v1"
+            /// let id = User::make_gts_instance_id("123.v1");
+            /// assert_eq!(id.as_ref(), "gts.x.myapp.entities.user.v1~123.v1");
             /// ```
             #[allow(dead_code)]
             #[must_use]
-            pub fn GTS_MAKE_INSTANCE_ID(segment: &str) -> String {
-                format!("{}{}", #schema_id, segment)
+            pub fn make_gts_instance_id(segment: &str) -> ::gts::GtsInstanceId {
+                ::gts::GtsInstanceId::new(#schema_id, segment)
             }
         }
     };

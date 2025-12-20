@@ -566,6 +566,90 @@ impl AsRef<str> for GtsWildcard {
     }
 }
 
+/// A type-safe wrapper for GTS instance identifiers.
+///
+/// `GtsInstanceId` wraps a fully-formed GTS instance ID string (e.g.,
+/// `gts.x.core.events.topic.v1~vendor.app.orders.v1.0`). It can be used as a map key,
+/// compared for equality, hashed, and serialized/deserialized.
+///
+/// # Example
+///
+/// ```
+/// use gts::GtsInstanceId;
+///
+/// let id = GtsInstanceId::new("gts.x.core.events.topic.v1~", "vendor.app.orders.v1.0");
+/// assert_eq!(id.as_ref(), "gts.x.core.events.topic.v1~vendor.app.orders.v1.0");
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct GtsInstanceId(String);
+
+impl GtsInstanceId {
+    /// Creates a new GTS instance ID by combining a schema ID with a segment.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_id` - The GTS schema ID (e.g., `gts.x.core.events.topic.v1~`)
+    /// * `segment` - The instance segment to append (e.g., `vendor.app.orders.v1.0`)
+    ///
+    /// # Returns
+    ///
+    /// A new `GtsInstanceId` containing the concatenated ID.
+    #[must_use]
+    pub fn new(schema_id: &str, segment: &str) -> Self {
+        Self(format!("{schema_id}{segment}"))
+    }
+
+    /// Returns the underlying string representation of the instance ID.
+    #[must_use]
+    pub fn into_string(self) -> String {
+        self.0
+    }
+}
+
+impl fmt::Display for GtsInstanceId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl AsRef<str> for GtsInstanceId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<GtsInstanceId> for String {
+    fn from(id: GtsInstanceId) -> Self {
+        id.0
+    }
+}
+
+impl std::ops::Deref for GtsInstanceId {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialEq<str> for GtsInstanceId {
+    fn eq(&self, other: &str) -> bool {
+        self.0 == other
+    }
+}
+
+impl PartialEq<&str> for GtsInstanceId {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<String> for GtsInstanceId {
+    fn eq(&self, other: &String) -> bool {
+        self.0 == *other
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {

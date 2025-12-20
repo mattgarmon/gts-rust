@@ -129,19 +129,19 @@ fn test_schema_json_required_fields() {
 }
 
 // =============================================================================
-// Tests for 3.b) GTS_MAKE_INSTANCE_ID() - Generate instance IDs
+// Tests for 3.b) make_gts_instance_id() - Generate instance IDs
 // =============================================================================
 
 #[test]
 fn test_gts_instance_id_simple_segment() {
     // Test with simple segment - event topic instance
-    let id = EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0");
+    let id = EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0");
     assert_eq!(
         id,
         "gts.x.core.events.topic.v1~x.commerce.orders.orders.v1.0"
     );
 
-    let id = Product::GTS_MAKE_INSTANCE_ID("vendor.package.sku.abc.v1");
+    let id = Product::make_gts_instance_id("vendor.package.sku.abc.v1");
     assert_eq!(
         id,
         "gts.x.test.entities.product.v1~vendor.package.sku.abc.v1"
@@ -151,31 +151,31 @@ fn test_gts_instance_id_simple_segment() {
 #[test]
 fn test_gts_instance_id_multi_segment() {
     // Test with multi-part segment like vendor.package.namespace.type.version
-    let id = EventTopic::GTS_MAKE_INSTANCE_ID("x.core.idp.contacts.v1");
+    let id = EventTopic::make_gts_instance_id("x.core.idp.contacts.v1");
     assert_eq!(id, "gts.x.core.events.topic.v1~x.core.idp.contacts.v1");
 }
 
 #[test]
 fn test_gts_instance_id_with_wildcard_segment() {
     // Test with segment containing wildcard "_"
-    let id = EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce._.orders.v1.0");
+    let id = EventTopic::make_gts_instance_id("x.commerce._.orders.v1.0");
     assert_eq!(id, "gts.x.core.events.topic.v1~x.commerce._.orders.v1.0");
 }
 
 #[test]
 fn test_gts_instance_id_versioned_segment() {
     // Test with versioned segment
-    let id = EventTopic::GTS_MAKE_INSTANCE_ID("x.y.z.instance.v1.0");
+    let id = EventTopic::make_gts_instance_id("x.y.z.instance.v1.0");
     assert_eq!(id, "gts.x.core.events.topic.v1~x.y.z.instance.v1.0");
 
-    let id = Product::GTS_MAKE_INSTANCE_ID("x.y.z.sku.v2.1");
+    let id = Product::make_gts_instance_id("x.y.z.sku.v2.1");
     assert_eq!(id, "gts.x.test.entities.product.v1~x.y.z.sku.v2.1");
 }
 
 #[test]
 fn test_gts_instance_id_empty_segment() {
     // Edge case: empty segment returns just the schema_id
-    let id = EventTopic::GTS_MAKE_INSTANCE_ID("");
+    let id = EventTopic::make_gts_instance_id("");
     assert_eq!(id, "gts.x.core.events.topic.v1~");
 }
 
@@ -220,7 +220,7 @@ fn test_properties_constant() {
 #[test]
 fn test_event_topic_serialization() {
     let topic = EventTopic {
-        id: EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0"),
+        id: EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0").into(),
         name: "orders".to_owned(),
         description: Some("Order lifecycle events topic".to_owned()),
         retention: "P90D".to_owned(),
@@ -257,7 +257,7 @@ fn test_product_serialization() {
 #[test]
 fn test_event_topic_instance_validates_against_schema() {
     let topic = EventTopic {
-        id: EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0"),
+        id: EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0").into(),
         name: "orders".to_owned(),
         description: Some("Order lifecycle events topic".to_owned()),
         retention: "P90D".to_owned(),
@@ -282,7 +282,7 @@ fn test_event_topic_instance_validates_against_schema() {
 #[test]
 fn test_product_instance_validates_against_schema() {
     let product = Product {
-        id: Product::GTS_MAKE_INSTANCE_ID("x.electronics.laptops.gaming.v1"),
+        id: Product::make_gts_instance_id("x.electronics.laptops.gaming.v1").into(),
         name: "Gaming Laptop".to_owned(),
         price: 1499.99,
         description: Some("High-performance gaming laptop".to_owned()),
@@ -412,7 +412,7 @@ fn test_instance_with_extra_fields_validates() {
 #[test]
 fn test_serialization_roundtrip_event_topic() {
     let original = EventTopic {
-        id: EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0"),
+        id: EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0").into(),
         name: "orders".to_owned(),
         description: Some("Order lifecycle events".to_owned()),
         retention: "P90D".to_owned(),
@@ -438,7 +438,7 @@ fn test_serialization_roundtrip_event_topic() {
 #[test]
 fn test_serialization_roundtrip_product() {
     let original = Product {
-        id: Product::GTS_MAKE_INSTANCE_ID("x.y.roundtrip.product.v1"),
+        id: Product::make_gts_instance_id("x.y.roundtrip.product.v1").into(),
         name: "Roundtrip Product".to_owned(),
         price: 199.99,
         description: Some("A product for testing roundtrip serialization".to_owned()),
@@ -460,7 +460,7 @@ fn test_serialization_roundtrip_product() {
 #[test]
 fn test_instance_id_appears_in_serialized_output() {
     let topic = EventTopic {
-        id: EventTopic::GTS_MAKE_INSTANCE_ID("x.core.idp.contacts.v1"),
+        id: EventTopic::make_gts_instance_id("x.core.idp.contacts.v1").into(),
         name: "contacts".to_owned(),
         description: None,
         retention: "P30D".to_owned(),
@@ -481,7 +481,7 @@ fn test_instance_id_appears_in_serialized_output() {
 fn test_multiple_instances_validate_independently() {
     let topics = [
         EventTopic {
-            id: EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0"),
+            id: EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0").into(),
             name: "orders".to_owned(),
             description: Some("Order events".to_owned()),
             retention: "P90D".to_owned(),
@@ -489,7 +489,7 @@ fn test_multiple_instances_validate_independently() {
             internal_config: None,
         },
         EventTopic {
-            id: EventTopic::GTS_MAKE_INSTANCE_ID("x.core.idp.contacts.v1"),
+            id: EventTopic::make_gts_instance_id("x.core.idp.contacts.v1").into(),
             name: "contacts".to_owned(),
             description: Some("Contact events".to_owned()),
             retention: "P30D".to_owned(),
@@ -497,7 +497,7 @@ fn test_multiple_instances_validate_independently() {
             internal_config: Some("config".to_owned()),
         },
         EventTopic {
-            id: EventTopic::GTS_MAKE_INSTANCE_ID("x.payments.transactions.v1.0"),
+            id: EventTopic::make_gts_instance_id("x.payments.transactions.v1.0").into(),
             name: "transactions".to_owned(),
             description: Some("Payment transactions".to_owned()),
             retention: "P365D".to_owned(),
@@ -556,7 +556,7 @@ fn test_schema_parsed_as_gts_entity() {
 fn test_instance_parsed_as_gts_entity() {
     // Create an instance and serialize it
     let topic = EventTopic {
-        id: EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0"),
+        id: EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0").into(),
         name: "orders".to_owned(),
         description: Some("Order lifecycle events".to_owned()),
         retention: "P90D".to_owned(),
@@ -614,7 +614,7 @@ fn test_gts_id_segments_match_schema() {
 #[test]
 fn test_gts_id_segments_match_instance() {
     // Generate an instance ID using the macro
-    let instance_id_str = EventTopic::GTS_MAKE_INSTANCE_ID("x.commerce.orders.orders.v1.0");
+    let instance_id_str = EventTopic::make_gts_instance_id("x.commerce.orders.orders.v1.0");
 
     // Parse it with GtsID
     let gts_id = GtsID::new(&instance_id_str).expect("Instance ID should be valid");
@@ -651,7 +651,7 @@ fn test_schema_and_instance_segments_relationship() {
     let schema_id = GtsID::new(EventTopic::GTS_SCHEMA_ID).unwrap();
 
     // An instance ID from the macro
-    let instance_id_str = EventTopic::GTS_MAKE_INSTANCE_ID("x.core.idp.contacts.v1");
+    let instance_id_str = EventTopic::make_gts_instance_id("x.core.idp.contacts.v1");
     let instance_id = GtsID::new(&instance_id_str).unwrap();
 
     // The first segment of the instance should match the schema's segment

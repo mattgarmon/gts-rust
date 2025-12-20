@@ -10,7 +10,7 @@ pub mod x_gts_ref;
 // Re-export commonly used types
 pub use entities::{GtsConfig, GtsEntity, GtsFile, ValidationError, ValidationResult};
 pub use files_reader::GtsFileReader;
-pub use gts::{GtsError, GtsID, GtsIdSegment, GtsWildcard};
+pub use gts::{GtsError, GtsID, GtsIdSegment, GtsInstanceId, GtsWildcard};
 pub use ops::GtsOps;
 pub use path_resolver::JsonPathResolver;
 pub use schema_cast::{GtsEntityCastResult, SchemaCastError};
