@@ -57,8 +57,7 @@ e2e: build
 	@./target/release/gts server --port 8000 & echo $$! > .server.pid
 	@sleep 2
 	@echo "Running e2e tests..."
-	@export PYTHONDONTWRITEBYTECODE=1
-	@pytest --log-file=e2e.log ./.gts-spec/tests || (kill `cat .server.pid` 2>/dev/null; rm -f .server.pid; exit 1)
+	@PYTHONDONTWRITEBYTECODE=1 pytest -p no:cacheprovider --log-file=e2e.log ./.gts-spec/tests || (kill `cat .server.pid` 2>/dev/null; rm -f .server.pid; exit 1)
 	@echo "Stopping server..."
 	@kill `cat .server.pid` 2>/dev/null || true
 	@rm -f .server.pid

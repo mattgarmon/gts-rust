@@ -214,6 +214,8 @@ jobs:
   e2e:
     name: E2E Tests (gts-spec)
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: 1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -244,7 +246,7 @@ jobs:
           sleep 2
 
       - name: Run e2e tests
-        run: pytest ./.gts-spec/tests -v
+        run: pytest -p no:cacheprovider ./.gts-spec/tests -v
 
       - name: Stop GTS server
         if: always()
