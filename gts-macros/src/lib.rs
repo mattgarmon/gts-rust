@@ -86,8 +86,8 @@ impl Parse for GtsSchemaArgs {
 ///
 /// The macro generates these associated items:
 ///
-/// - `GTS_TYPE_SCHEMA: &'static str` - The JSON Schema with `$id` set to `schema_id`
-/// - `gts_instance_id(segment: &str) -> String` - Generate an instance ID by appending
+/// - `GTS_SCHEMA_JSON: &'static str` - The JSON Schema with `$id` set to `schema_id`
+/// - `GTS_MAKE_INSTANCE_ID(segment: &str) -> String` - Generate an instance ID by appending
 ///   a segment to the schema ID. The segment must be a valid GTS segment (e.g., "a.b.c.v1")
 ///
 /// # Arguments
@@ -103,22 +103,22 @@ impl Parse for GtsSchemaArgs {
 /// use gts_macros::struct_to_gts_schema;
 ///
 /// #[struct_to_gts_schema(
-///     file_path = "schemas/gts.x.myapp.entities.user.v1~.schema.json",
-///     schema_id = "gts.x.myapp.entities.user.v1~",
-///     description = "User entity",
-///     properties = "id,email,name"
+///     file_path = "schemas/gts.x.core.events.topic.v1~.schema.json",
+///     schema_id = "gts.x.core.events.topic.v1~",
+///     description = "Event broker topics",
+///     properties = "id,persisted,retention_days,name"
 /// )]
 /// struct User {
 ///     id: String,
-///     email: String,
-///     name: String,
+///     persisted: bool,
+///     retention_days: i32,
 ///     internal_field: i32, // Not included in schema (not in properties list)
 /// }
 ///
 /// // Runtime usage:
-/// let schema = User::GTS_TYPE_SCHEMA;
-/// let instance_id = User::GTS_INSTANCE_ID("a.b.c.d.v1");
-/// assert_eq!(instance_id, "gts.x.myapp.entities.user.v1~a.b.c.d.v1");
+/// let schema = User::GTS_SCHEMA_JSON;
+/// let instance_id = User::GTS_MAKE_INSTANCE_ID("vendor.marketplace.orders.order_created.v1");
+/// assert_eq!(instance_id, "gts.x.core.events.topic.v1~vendor.marketplace.orders.order_created.v1");
 /// ```
 #[proc_macro_attribute]
 #[allow(clippy::too_many_lines, clippy::missing_panics_doc)]
@@ -276,7 +276,7 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
             ///
             /// The `$id` field is set to the `schema_id` from the macro annotation.
             #[allow(dead_code)]
-            pub const GTS_TYPE_SCHEMA: &'static str = #schema_json;
+            pub const GTS_SCHEMA_JSON: &'static str = #schema_json;
 
             /// Generate a GTS instance ID by appending a segment to the schema ID.
             ///
@@ -291,12 +291,12 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
             /// # Example
             ///
             /// ```ignore
-            /// let id = User::GTS_INSTANCE_ID("123.v1");
+            /// let id = User::GTS_MAKE_INSTANCE_ID("123.v1");
             /// // Returns: "gts.x.myapp.entities.user.v1~123.v1"
             /// ```
             #[allow(dead_code)]
             #[must_use]
-            pub fn GTS_INSTANCE_ID(segment: &str) -> String {
+            pub fn GTS_MAKE_INSTANCE_ID(segment: &str) -> String {
                 format!("{}{}", #schema_id, segment)
             }
         }

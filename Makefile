@@ -40,5 +40,11 @@ deny:
 # Run all security checks
 security: deny
 
+# Measure code coverage
+coverage:
+	@command -v cargo-llvm-cov >/dev/null || (echo "Installing cargo-llvm-cov..." && cargo install cargo-llvm-cov)
+	cargo llvm-cov --workspace --lcov --output-path lcov.info
+	cargo llvm-cov report
+
 # Run all quality checks
 check: fmt clippy test

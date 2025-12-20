@@ -24,3 +24,5 @@ serde_json.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 trybuild = "1.0"
+jsonschema.workspace = true
+gts = { path = "../gts" }

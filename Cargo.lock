@@ -516,6 +516,8 @@ dependencies = [
 name = "gts-macros"
 version = "0.1.0"
 dependencies = [
+ "gts",
+ "jsonschema",
  "proc-macro2",
  "quote",
  "serde",

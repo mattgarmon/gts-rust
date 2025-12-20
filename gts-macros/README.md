@@ -43,10 +43,10 @@ pub struct User {
 // Runtime usage:
 fn example() {
     // Get the JSON Schema
-    let schema = User::GTS_TYPE_SCHEMA;
+    let schema = User::GTS_SCHEMA_JSON;
 
     // Generate instance IDs
-    let instance_id = User::GTS_INSTANCE_ID("123.v1");
+    let instance_id = User::GTS_MAKE_INSTANCE_ID("123.v1");
     assert_eq!(instance_id, "gts.x.myapp.entities.user.v1~123.v1");
 }
 ```
@@ -199,38 +199,38 @@ For the `User` struct above, generates `schemas/gts.x.myapp.entities.user.v1~.sc
 
 The macro generates associated constants and methods for runtime use.
 
-### `GTS_TYPE_SCHEMA`
+### `GTS_SCHEMA_JSON`
 
 A compile-time constant containing the JSON Schema with `$id` set to `schema_id`.
 
 ```rust
 // Access the schema at runtime
-let schema: &'static str = User::GTS_TYPE_SCHEMA;
+let schema: &'static str = User::GTS_SCHEMA_JSON;
 
 // Parse it if needed
 let parsed: serde_json::Value = serde_json::from_str(schema).unwrap();
 assert_eq!(parsed["$id"], "gts.x.myapp.entities.user.v1~");
 ```
 
-### `GTS_INSTANCE_ID(segment)`
+### `GTS_MAKE_INSTANCE_ID(segment)`
 
 Generate instance IDs by appending a segment to the schema ID.
 
 ```rust
 // Simple segment
-let id = User::GTS_INSTANCE_ID("x.core.namespace.type.v1");
+let id = User::GTS_MAKE_INSTANCE_ID("x.core.namespace.type.v1");
 assert_eq!(id, "gts.x.myapp.entities.user.v1~x.core.namespace.type.v1");
 
 // Multi-part segment
-let id = User::GTS_INSTANCE_ID("x.bss.orders.commerce.v1");
+let id = User::GTS_MAKE_INSTANCE_ID("x.bss.orders.commerce.v1");
 assert_eq!(id, "gts.x.myapp.entities.user.v1~x.bss.orders.commerce.v1");
 
 // Segment with wildcard
-let id = User::GTS_INSTANCE_ID("a.b._.d.v1.0");
+let id = User::GTS_MAKE_INSTANCE_ID("a.b._.d.v1.0");
 assert_eq!(id, "gts.x.myapp.entities.user.v1~a.b._.d.v1.0");
 
 // Versioned segment
-let id = User::GTS_INSTANCE_ID("vendor.pkg.namespace.instance.v2.1");
+let id = User::GTS_MAKE_INSTANCE_ID("vendor.pkg.namespace.instance.v2.1");
 assert_eq!(id, "gts.x.myapp.entities.user.v1~vendor.pkg.namespace.instance.v2.1");
 ```
 
@@ -321,11 +321,11 @@ gts generate-from-rust --source src/
 ```rust
 fn main() {
     // Access schema
-    println!("Product schema: {}", Product::GTS_TYPE_SCHEMA);
+    println!("Product schema: {}", Product::GTS_SCHEMA_JSON);
 
     // Generate instance IDs
-    let product_id = Product::GTS_INSTANCE_ID("sku-12345.v1");
-    let order_id = Order::GTS_INSTANCE_ID("ord-98765.v1");
+    let product_id = Product::GTS_MAKE_INSTANCE_ID("sku-12345.v1");
+    let order_id = Order::GTS_MAKE_INSTANCE_ID("ord-98765.v1");
 
     println!("Product ID: {}", product_id);
     // Output: gts.x.shop.entities.product.v1~sku-12345.v1
