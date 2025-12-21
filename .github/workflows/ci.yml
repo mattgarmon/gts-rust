@@ -210,3 +210,73 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
           # token: ${{ secrets.CODECOV_TOKEN }}  # Uncomment if required for private repos
+
+  e2e:
+    name: E2E Tests (gts-spec)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo/target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --workspace --release
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pytest and dependencies
+        run: pip install pytest requests httprunner
+
+      - name: Run e2e tests
+        run: |
+          # Start server in background with logs
+          ./target/release/gts server --port 8000 > .server.log 2>&1 &
+          SERVER_PID=$!
+          echo "Started GTS server with PID $SERVER_PID"
+
+          # Wait for server to be ready
+          echo "Waiting for GTS server to start..."
+          for i in $(seq 1 30); do
+            if ! kill -0 $SERVER_PID 2>/dev/null; then
+              echo "ERROR: Server process died unexpectedly"
+              echo "=== Server logs ==="
+              cat .server.log || true
+              exit 1
+            fi
+            if curl -sf http://127.0.0.1:8000/entities > /dev/null 2>&1; then
+              echo "GTS server is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: GTS server failed to start within 30 seconds"
+              echo "=== Server logs ==="
+              cat .server.log || true
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            echo "Attempt $i/30: Server not ready yet, waiting..."
+            sleep 1
+          done
+
+          # Run tests
+          pytest -p no:cacheprovider ./.gts-spec/tests -v
+          TEST_EXIT=$?
+
+          # Stop server
+          echo "Stopping GTS server..."
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+
+          exit $TEST_EXIT

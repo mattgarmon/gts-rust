@@ -162,7 +162,7 @@ For the `User` struct above, generates `schemas/gts.x.myapp.entities.user.v1~.sc
 
 ```json
 {
-  "$id": "gts.x.myapp.entities.user.v1~",
+  "$id": "gts://gts.x.myapp.entities.user.v1~",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "User",
   "type": "object",

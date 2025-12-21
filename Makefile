@@ -1,6 +1,6 @@
 CI := 1
 
-.PHONY: help build dev-fmt all check fmt clippy test deny security
+.PHONY: help build dev-fmt all check fmt clippy test deny security update-spec e2e
 
 # Default target - show help
 .DEFAULT_GOAL := help
@@ -12,6 +12,7 @@ help:
 # Build the workspace
 build:
 	cargo build --workspace
+	cargo build --workspace --release
 
 # Fix formatting issues
 dev-fmt:
@@ -46,5 +47,21 @@ coverage:
 	cargo llvm-cov --workspace --lcov --output-path lcov.info
 	cargo llvm-cov report
 
+# Update gts-spec submodule to latest
+update-spec:
+	git submodule update --remote .gts-spec
+
+# Run end-to-end tests against gts-spec
+e2e: build
+	@echo "Starting server in background..."
+	@./target/release/gts server --port 8000 & echo $$! > .server.pid
+	@sleep 2
+	@echo "Running e2e tests..."
+	@PYTHONDONTWRITEBYTECODE=1 pytest -p no:cacheprovider --log-file=e2e.log ./.gts-spec/tests || (kill `cat .server.pid` 2>/dev/null; rm -f .server.pid; exit 1)
+	@echo "Stopping server..."
+	@kill `cat .server.pid` 2>/dev/null || true
+	@rm -f .server.pid
+	@echo "E2E tests completed successfully"
+
 # Run all quality checks
-check: fmt clippy test
+check: fmt clippy test e2e

@@ -22,7 +22,8 @@
 ///
 /// ```json
 /// {
-///   "$id": "gts.x.example._.user.v1~",
+///   "$id": "gts://gts.x.example._.user.v1~",
+///   "$schema": "http://json-schema.org/draft-07/schema#",
 ///   "type": "object",
 ///   "properties": {
 ///     "id": {
@@ -47,7 +48,9 @@
 ///
 /// // Validate a schema
 /// let schema = json!({
-///     "$id": "gts.x.test._.schema.v1~",
+///     "$id": "gts://gts.x.test._.schema.v1~",
+///     "$schema": "http://json-schema.org/draft-07/schema#",
+///     "type": "object",
 ///     "properties": {
 ///         "id": {"type": "string", "x-gts-ref": "/$id"}
 ///     }
@@ -55,7 +58,7 @@
 /// let errors = validator.validate_schema(&schema, "", None);
 /// assert!(errors.is_empty());
 ///
-/// // Validate an instance
+/// // Validate an instance - note: the value must match $id WITHOUT the gts:// prefix
 /// let instance = json!({"id": "gts.x.test._.schema.v1~"});
 /// let errors = validator.validate_instance(&instance, &schema, "");
 /// assert!(errors.is_empty());
@@ -76,7 +79,9 @@
 /// Example:
 /// ```json
 /// {
-///   "$id": "gts.x.example._.user.v1~",
+///   "$id": "gts://gts.x.example._.user.v1~",
+///   "$schema": "http://json-schema.org/draft-07/schema#",
+///   "type": "object",
 ///   "properties": {
 ///     "type": {"type": "string", "x-gts-ref": "/$id"}
 ///   }
@@ -474,7 +479,9 @@ impl XGtsRefValidator {
     /// * `pointer` - JSON Pointer (e.g., "/$id", "/properties/type")
     ///
     /// # Returns
-    /// The resolved value as a string or None if not found
+    /// The resolved value as a string or None if not found.
+    /// Note: For `/$id` references, the `gts://` prefix is stripped from the value
+    /// as per GTS specification (relative self-reference should match the $id without the prefix).
     fn resolve_pointer(schema: &Value, pointer: &str) -> Option<String> {
         let path = pointer.trim_start_matches('/');
         if path.is_empty() {
@@ -491,9 +498,9 @@ impl XGtsRefValidator {
             current = current.get(part)?;
         }
 
-        // If current is a string, return it
+        // If current is a string, return it (stripping gts:// prefix if present)
         if let Some(s) = current.as_str() {
-            return Some(s.to_owned());
+            return Some(Self::strip_gts_uri_prefix(s));
         }
 
         // If current is an object with x-gts-ref, resolve it
@@ -509,6 +516,15 @@ impl XGtsRefValidator {
         }
 
         None
+    }
+
+    /// Strip the `gts://` prefix from a value if present.
+    ///
+    /// This is used for `/$id` relative references where the schema's `$id` field
+    /// contains a full GTS URI (e.g., `gts://gts.x.example._.user.v1~`) but the
+    /// instance value should match without the prefix (e.g., `gts.x.example._.user.v1~`).
+    fn strip_gts_uri_prefix(value: &str) -> String {
+        value.strip_prefix("gts://").unwrap_or(value).to_owned()
     }
 }
 
@@ -616,5 +632,71 @@ mod tests {
 
         let errors = validator.validate_instance(&instance, &schema, "");
         assert!(!errors.is_empty());
+    }
+
+    #[test]
+    fn test_validate_instance_with_dollar_id_ref_strips_gts_prefix() {
+        let validator = XGtsRefValidator::new();
+        // Schema has $id with gts:// prefix
+        let schema = json!({
+            "$id": "gts://gts.x.test._.entity.v1~",
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "x-gts-ref": "/$id"
+                }
+            }
+        });
+
+        // Instance value should match WITHOUT the gts:// prefix
+        let instance = json!({
+            "id": "gts.x.test._.entity.v1~"
+        });
+
+        let errors = validator.validate_instance(&instance, &schema, "");
+        assert!(errors.is_empty(), "Expected no errors but got: {errors:?}");
+    }
+
+    #[test]
+    fn test_validate_instance_with_dollar_id_ref_rejects_full_uri() {
+        let validator = XGtsRefValidator::new();
+        let schema = json!({
+            "$id": "gts://gts.x.test._.entity.v1~",
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "x-gts-ref": "/$id"
+                }
+            }
+        });
+
+        // Instance value with gts:// prefix should be rejected (not a valid GTS ID)
+        let instance = json!({
+            "id": "gts://gts.x.test._.entity.v1~"
+        });
+
+        let errors = validator.validate_instance(&instance, &schema, "");
+        assert!(
+            !errors.is_empty(),
+            "Expected validation error for value with gts:// prefix"
+        );
+    }
+
+    #[test]
+    fn test_strip_gts_uri_prefix() {
+        // With prefix
+        assert_eq!(
+            XGtsRefValidator::strip_gts_uri_prefix("gts://gts.x.test._.entity.v1~"),
+            "gts.x.test._.entity.v1~"
+        );
+        // Without prefix (passthrough)
+        assert_eq!(
+            XGtsRefValidator::strip_gts_uri_prefix("gts.x.test._.entity.v1~"),
+            "gts.x.test._.entity.v1~"
+        );
     }
 }

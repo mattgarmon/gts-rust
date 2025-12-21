@@ -40,11 +40,7 @@ impl From<&crate::gts::GtsIdSegment> for GtsIdSegmentInfo {
             package: seg.package.clone(),
             namespace: seg.namespace.clone(),
             type_name: seg.type_name.clone(),
-            ver_major: if seg.ver_major > 0 {
-                Some(seg.ver_major)
-            } else {
-                None
-            },
+            ver_major: Some(seg.ver_major),
             ver_minor: seg.ver_minor,
             is_type: seg.is_type,
         }
@@ -627,6 +623,16 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_id_version_zero() {
+        let ops = GtsOps::new(None, None, 0);
+        let result = ops.parse_id("gts.x.pkg.ns.type.v0~");
+        assert!(result.ok);
+        assert_eq!(result.segments.len(), 1);
+        assert_eq!(result.segments[0].ver_major, Some(0));
+        assert_eq!(result.segments[0].ver_minor, None);
+    }
+
+    #[test]
     fn test_extract_id_from_json() {
         let ops = GtsOps::new(None, None, 0);
         let content = json!({
@@ -675,7 +681,7 @@ mod tests {
 
         // Register a base schema
         let base_schema = json!({
-            "$id": "gts.test.base.v1.0~",
+            "$id": "gts://gts.test.base.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -688,7 +694,7 @@ mod tests {
 
         // Register a derived schema
         let derived_schema = json!({
-            "$id": "gts.test.derived.v1.1~",
+            "$id": "gts://gts.test.derived.v1.1~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -850,7 +856,7 @@ mod tests {
 
         // Register old schema
         let old_schema = json!({
-            "$id": "gts.test.compat.v1.0~",
+            "$id": "gts://gts.test.compat.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -864,7 +870,7 @@ mod tests {
 
         // Register new schema with expanded enum
         let new_schema = json!({
-            "$id": "gts.test.compat.v1.1~",
+            "$id": "gts://gts.test.compat.v1.1~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -2120,7 +2126,7 @@ mod tests {
         let mut ops = GtsOps::new(None, None, 0);
 
         let schema = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.0~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object"
         });
@@ -2286,7 +2292,7 @@ mod tests {
         let mut ops = GtsOps::new(None, None, 0);
 
         let schema = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.0~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -2349,7 +2355,7 @@ mod tests {
         let mut ops = GtsOps::new(None, None, 0);
 
         let schema1 = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.0~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -2358,7 +2364,7 @@ mod tests {
         });
 
         let schema2 = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.1~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.1~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -2423,7 +2429,7 @@ mod tests {
         let cfg = GtsConfig::default();
 
         let from_schema_content = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.0~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.0~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
@@ -2432,7 +2438,7 @@ mod tests {
         });
 
         let to_schema_content = json!({
-            "$id": "gts.vendor.package.namespace.type.v1.1~",
+            "$id": "gts://gts.vendor.package.namespace.type.v1.1~",
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
