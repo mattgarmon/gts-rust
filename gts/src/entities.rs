@@ -105,7 +105,7 @@ pub struct GtsEntity {
     /// or from `$id` field for schemas). None for anonymous instances.
     pub gts_id: Option<GtsID>,
     /// The instance ID - for anonymous instances this is the UUID from `id` field,
-    /// for well-known instances this equals gts_id.id, for schemas this equals gts_id.id.
+    /// for well-known instances this equals `gts_id.id`, for schemas this equals `gts_id.id`.
     pub instance_id: Option<String>,
     /// True if this is a JSON Schema (has `$schema` field), false if it's an instance.
     pub is_schema: bool,
@@ -116,9 +116,9 @@ pub struct GtsEntity {
     pub gts_refs: Vec<GtsRef>,
     pub validation: ValidationResult,
     /// The schema ID that this entity conforms to:
-    /// - For schemas: the `$schema` field value (e.g., "http://json-schema.org/draft-07/schema#")
+    /// - For schemas: the `$schema` field value (e.g., `http://json-schema.org/draft-07/schema#`)
     ///   OR for GTS schemas, the parent schema from the chain
-    /// - For instances: the `type` field value (the GTS type ID ending with ~)
+    /// - For instances: the `type` field value (the GTS type ID ending with `~`)
     pub schema_id: Option<String>,
     pub selected_entity_field: Option<String>,
     pub selected_schema_id_field: Option<String>,
@@ -219,18 +219,15 @@ impl GtsEntity {
     }
 
     /// Extract IDs for a schema entity.
-    /// - gts_id: from $id field (must be gts:// URI with GTS ID)
-    /// - schema_id: the parent schema (from $schema field or extracted from chain)
-    /// - instance_id: same as gts_id for schemas
+    /// - `gts_id`: from `$id` field (must be `gts://` URI with GTS ID)
+    /// - `schema_id`: the parent schema (from `$schema` field or extracted from chain)
+    /// - `instance_id`: same as `gts_id` for schemas
     fn extract_schema_ids(&mut self, cfg: &GtsConfig) {
         // Extract GTS ID from $id field
         if let Some(obj) = self.content.as_object() {
             if let Some(id_val) = obj.get("$id") {
                 if let Some(id_str) = id_val.as_str() {
-                    let normalized = id_str
-                        .strip_prefix(GTS_URI_PREFIX)
-                        .unwrap_or(id_str)
-                        .trim();
+                    let normalized = id_str.strip_prefix(GTS_URI_PREFIX).unwrap_or(id_str).trim();
                     if GtsID::is_valid(normalized) {
                         self.gts_id = GtsID::new(normalized).ok();
                         self.instance_id = Some(normalized.to_owned());
@@ -360,7 +357,7 @@ impl GtsEntity {
         }
     }
 
-    /// Get the id field value from entity_id_fields config
+    /// Get the id field value from `entity_id_fields` config
     fn get_id_field_value(&mut self, cfg: &GtsConfig) -> Option<String> {
         for f in &cfg.entity_id_fields {
             // Skip $schema and type fields - they're not entity IDs
@@ -375,7 +372,7 @@ impl GtsEntity {
         None
     }
 
-    /// Get the type/schema field value from schema_id_fields config
+    /// Get the type/schema field value from `schema_id_fields` config
     fn get_type_field_value(&mut self, cfg: &GtsConfig) -> Option<String> {
         for f in &cfg.schema_id_fields {
             // Skip $schema for instances - it's not a valid field for instances
@@ -605,9 +602,9 @@ impl GtsEntity {
     }
 
     /// Returns the effective ID for this entity (for store indexing and CLI output).
-    /// - For schemas: the GTS ID from $id field
-    /// - For well-known instances: the GTS ID from id field
-    /// - For anonymous instances: the instance_id (UUID or other non-GTS identifier)
+    /// - For schemas: the GTS ID from `$id` field
+    /// - For well-known instances: the GTS ID from `id` field
+    /// - For anonymous instances: the `instance_id` (UUID or other non-GTS identifier)
     #[must_use]
     pub fn effective_id(&self) -> Option<String> {
         // Prefer GTS ID if available

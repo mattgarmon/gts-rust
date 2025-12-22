@@ -153,10 +153,7 @@ impl GtsFileReader {
                             tracing::debug!("- discovered entity: {}", id);
                             entities.push(entity);
                         } else {
-                            tracing::debug!(
-                                "- skipped entity from {:?} (no valid ID)",
-                                file_path
-                            );
+                            tracing::debug!("- skipped entity from {:?} (no valid ID)", file_path);
                         }
                     }
                 } else {

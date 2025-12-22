@@ -510,43 +510,13 @@ impl GtsOps {
             None,
         );
 
-        // Check for invalid GTS entity conditions
-        let error = Self::validate_gts_entity(content, &entity);
-
         GtsExtractIdResult {
             id: entity.effective_id().unwrap_or_default(),
             schema_id: entity.schema_id,
             selected_entity_field: entity.selected_entity_field,
             selected_schema_id_field: entity.selected_schema_id_field,
             is_schema: entity.is_schema,
-            error,
         }
-    }
-
-    /// Validate that the content represents a valid GTS entity.
-    /// Returns an error message if validation fails.
-    fn validate_gts_entity(content: &Value, entity: &GtsEntity) -> Option<String> {
-        if let Some(obj) = content.as_object() {
-            // Check for $id without $schema - this is invalid for GTS
-            // $id is only valid in JSON Schema documents (which must have $schema)
-            if obj.contains_key("$id") && !obj.contains_key("$schema") {
-                return Some(
-                    "Invalid GTS entity: '$id' field is only valid in JSON Schema documents (requires '$schema' field). \
-                     For instances, use 'id' field instead.".to_owned()
-                );
-            }
-
-            // Check if entity has neither a valid ID nor schema
-            if entity.effective_id().is_none() && entity.schema_id.is_none() {
-                return Some(
-                    "Invalid GTS entity: no valid GTS identifier found. \
-                     Schemas must have '$schema' and '$id' fields. \
-                     Instances must have 'id' field (GTS ID or UUID) and optionally 'type' field.".to_owned()
-                );
-            }
-        }
-
-        None
     }
 
     pub fn get_entity(&mut self, gts_id: &str) -> GtsGetEntityResult {
