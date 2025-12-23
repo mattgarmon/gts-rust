@@ -9,22 +9,9 @@ help: the trait `GtsSchema` is not implemented for `MyStruct`
    |
 26 | pub struct MyStruct {
    | ^^^^^^^^^^^^^^^^^^^
-help: the following other types implement trait `GtsSchema`
-  --> tests/compile_fail/non_gts_generic.rs:11:1
-   |
-11 | / #[struct_to_gts_schema(
-12 | |     dir_path = "schemas",
-13 | |     base = true,
-14 | |     schema_id = "gts.x.core.events.type.v1~",
-15 | |     description = "Base event type",
-16 | |     properties = "id,payload"
-17 | | )]
-   | |__^ `BaseEventV1<P>`
-   |
-  ::: $WORKSPACE/gts/src/schema.rs
-   |
-   |   impl GtsSchema for () {
-   |   ^^^^^^^^^^^^^^^^^^^^^ `()`
+   = help: the following other types implement trait `GtsSchema`:
+             ()
+             BaseEventV1<P>
 note: required by a bound in `BaseEventV1`
   --> tests/compile_fail/non_gts_generic.rs:11:1
    |
@@ -55,22 +42,9 @@ help: the trait `GtsSchema` is not implemented for `MyStruct`
    |
 26 | pub struct MyStruct {
    | ^^^^^^^^^^^^^^^^^^^
-help: the following other types implement trait `GtsSchema`
-  --> tests/compile_fail/non_gts_generic.rs:11:1
-   |
-11 | / #[struct_to_gts_schema(
-12 | |     dir_path = "schemas",
-13 | |     base = true,
-14 | |     schema_id = "gts.x.core.events.type.v1~",
-15 | |     description = "Base event type",
-16 | |     properties = "id,payload"
-17 | | )]
-   | |__^ `BaseEventV1<P>`
-   |
-  ::: $WORKSPACE/gts/src/schema.rs
-   |
-   |   impl GtsSchema for () {
-   |   ^^^^^^^^^^^^^^^^^^^^^ `()`
+   = help: the following other types implement trait `GtsSchema`:
+             ()
+             BaseEventV1<P>
 note: required by a bound in `BaseEventV1`
   --> tests/compile_fail/non_gts_generic.rs:11:1
    |
