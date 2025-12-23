@@ -267,27 +267,6 @@ let schema = BaseEventV1::<AuditPayloadV1<PlaceOrderDataV1>>::gts_schema_with_re
 - ✅ No arbitrary extra properties can be added to generic fields
 - ✅ Type safety is enforced at the JSON Schema level
 
-### Schema Composition & Inheritance (`GtsSchema` Trait)
-
-The macro automatically implements the `GtsSchema` trait, enabling runtime schema composition for nested generic types. This allows you to compose schemas at runtime for complex type hierarchies like `BaseEventV1<AuditPayloadV1<PlaceOrderDataV1>>`.
-
-```rust
-use gts::GtsSchema;
-
-// Get composed schema for nested type
-let schema = BaseEventV1::<AuditPayloadV1<PlaceOrderDataV1>>::gts_schema_with_refs_allof();
-
-// The schema will have proper nesting:
-// - payload field contains AuditPayloadV1's schema
-// - payload.data field contains PlaceOrderDataV1's schema
-// - All with additionalProperties: false for type safety
-```
-
-**Generic Field Type Safety**: Generic fields (fields that accept nested types) automatically have `additionalProperties: false` set. This ensures:
-- ✅ Only properly nested inherited structs can be used as values
-- ✅ No arbitrary extra properties can be added to generic fields
-- ✅ Type safety is enforced at the JSON Schema level
-
 ### Other Generated Constants
 
 | Constant | Description |
