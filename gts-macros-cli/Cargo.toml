@@ -1,0 +1,34 @@
+[package]
+name = "gts-macros-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Demo tool for GTS macros schema introspection and inheritance"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "gts-macros-cli"
+path = "src/main.rs"
+
+[dependencies]
+gts = { path = "../gts" }
+gts-macros = { path = "../gts-macros" }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+uuid.workspace = true
+schemars.workspace = true
+clap.workspace = true
+
+# Include test modules for schema discovery
+[dev-dependencies]
+serde = { workspace = true, features = ["derive"] }
+
+# Build dependencies
+[build-dependencies]
+serde.workspace = true
+serde_json.workspace = true

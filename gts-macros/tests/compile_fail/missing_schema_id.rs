@@ -3,7 +3,8 @@
 use gts_macros::struct_to_gts_schema;
 
 #[struct_to_gts_schema(
-    file_path = "schemas/user.v1~.schema.json",
+    dir_path = "schemas",
+    base = true,
     description = "User entity",
     properties = "id"
 )]

@@ -144,7 +144,36 @@ impl GtsStore {
         self.by_id.iter()
     }
 
-    fn resolve_schema_refs(&self, schema: &Value) -> Value {
+    /// Resolve all `$ref` references in a JSON Schema by inlining the referenced schemas.
+    ///
+    /// This method recursively traverses the schema, finds all `$ref` references,
+    /// and replaces them with the actual schema content from the store. The result
+    /// is a fully inlined schema with no external references.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema` - The JSON Schema value that may contain `$ref` references
+    ///
+    /// # Returns
+    ///
+    /// A new `serde_json::Value` with all `$ref` references resolved and inlined.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use gts::GtsStore;
+    /// let store = GtsStore::new();
+    ///
+    /// // Add schemas to store
+    /// store.add_schema_json("parent.v1~", parent_schema)?;
+    /// store.add_schema_json("child.v1~", child_schema_with_ref)?;
+    ///
+    /// // Resolve references
+    /// let inlined = store.resolve_schema_refs(&child_schema_with_ref);
+    /// assert!(!inlined.to_string().contains("$ref"));
+    /// ```
+    #[allow(clippy::cognitive_complexity, clippy::too_many_lines)]
+    pub fn resolve_schema_refs(&self, schema: &Value) -> Value {
         // Recursively resolve $ref references in the schema
         match schema {
             Value::Object(map) => {
@@ -193,6 +222,72 @@ impl GtsStore {
                         return Value::Object(new_map);
                     }
                     return schema.clone();
+                }
+
+                // Special handling for allOf arrays - merge $ref resolved schemas
+                if let Some(Value::Array(all_of_array)) = map.get("allOf") {
+                    let mut resolved_all_of = Vec::new();
+                    let mut merged_properties = serde_json::Map::new();
+                    let mut merged_required: Vec<String> = Vec::new();
+
+                    for item in all_of_array {
+                        let resolved_item = self.resolve_schema_refs(item);
+
+                        match resolved_item {
+                            Value::Object(ref item_map) => {
+                                // If this is a resolved schema (no $ref), merge its properties
+                                if item_map.contains_key("$ref") {
+                                    // Keep items that still have $ref (couldn't be resolved)
+                                    resolved_all_of.push(resolved_item);
+                                } else {
+                                    if let Some(Value::Object(props_map)) =
+                                        item_map.get("properties")
+                                    {
+                                        for (k, v) in props_map {
+                                            merged_properties.insert(k.clone(), v.clone());
+                                        }
+                                    }
+                                    if let Some(Value::Array(req_array)) = item_map.get("required")
+                                    {
+                                        for v in req_array {
+                                            if let Value::String(s) = v {
+                                                if !merged_required.contains(s) {
+                                                    merged_required.push(s.to_owned());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            _ => resolved_all_of.push(resolved_item),
+                        }
+                    }
+
+                    // If we have merged properties, create a single schema instead of allOf
+                    if !merged_properties.is_empty() {
+                        let mut merged_schema = serde_json::Map::new();
+
+                        // Copy all properties except allOf
+                        for (k, v) in map {
+                            if k != "allOf" {
+                                merged_schema.insert(k.clone(), v.clone());
+                            }
+                        }
+
+                        // Add merged properties and required fields
+                        merged_schema
+                            .insert("properties".to_owned(), Value::Object(merged_properties));
+                        if !merged_required.is_empty() {
+                            merged_schema.insert(
+                                "required".to_owned(),
+                                Value::Array(
+                                    merged_required.into_iter().map(Value::String).collect(),
+                                ),
+                            );
+                        }
+
+                        return Value::Object(merged_schema);
+                    }
                 }
 
                 // Recursively process all properties

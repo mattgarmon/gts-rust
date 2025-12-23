@@ -1,8 +1,9 @@
-//! Test: Missing required attribute file_path
+//! Test: Missing required attribute dir_path
 
 use gts_macros::struct_to_gts_schema;
 
 #[struct_to_gts_schema(
+    base = true,
     schema_id = "gts.x.app.entities.user.v1~",
     description = "User entity",
     properties = "id"

@@ -1,12 +1,13 @@
-//! Test: file_path must end with .json
+//! Test: Missing property in struct should cause compile error
 
 use gts_macros::struct_to_gts_schema;
 
 #[struct_to_gts_schema(
-    file_path = "schemas/user.v1~.schema",
+    dir_path = "schemas",
+    base = true,
     schema_id = "gts.x.app.entities.user.v1~",
     description = "User entity",
-    properties = "id"
+    properties = "id,nonexistent"
 )]
 pub struct User {
     pub id: String,

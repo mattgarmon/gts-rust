@@ -1,0 +1,15 @@
+{
+  "$id": "gts://gts.x.app.entities.user.v1~",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "User entity",
+  "properties": {
+    "id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "id"
+  ],
+  "title": "User",
+  "type": "object"
+}

@@ -198,7 +198,7 @@ fn extract_and_generate_schemas(
 ) -> Result<Vec<(String, String)>> {
     // Regex to find struct_to_gts_schema annotations
     let re = Regex::new(
-        r#"(?s)#\[struct_to_gts_schema\(\s*file_path\s*=\s*"([^"]+)"\s*,\s*schema_id\s*=\s*"([^"]+)"\s*,\s*description\s*=\s*"([^"]+)"\s*,\s*properties\s*=\s*"([^"]+)"\s*\)\]\s*(?:pub\s+)?struct\s+(\w+)\s*\{([^}]+)\}"#,
+        r#"(?s)#\[struct_to_gts_schema\(\s*dir_path\s*=\s*\"([^\"]+)\"\s*,\s*schema_id\s*=\s*\"([^\"]+)\"\s*,\s*description\s*=\s*\"([^\"]+)\"\s*,\s*properties\s*=\s*\"([^\"]+)\"\s*\)\]\s*(?:pub\s+)?struct\s+(\w+)\s*\{([^}]+)\}"#,
     )?;
 
     // Pre-compile field regex outside the loop
@@ -207,34 +207,25 @@ fn extract_and_generate_schemas(
     let mut results = Vec::new();
 
     for cap in re.captures_iter(content) {
-        let file_path = &cap[1];
+        let dir_path = &cap[1];
         let schema_id = &cap[2];
         let description = &cap[3];
         let properties_str = &cap[4];
         let struct_name = &cap[5];
         let struct_body = &cap[6];
 
-        // Validate file_path ends with .json
-        if !std::path::Path::new(file_path)
-            .extension()
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
-        {
-            bail!(
-                "Invalid file_path in {}:{} - file_path must end with '.json': {}",
-                source_file.display(),
-                struct_name,
-                file_path
-            );
-        }
+        // Schema file name is always derived from schema_id
+        // e.g. {dir_path}/{schema_id}.schema.json
+        let schema_file_rel = format!("{dir_path}/{schema_id}.schema.json");
 
         // Determine output path
         let output_path = if let Some(output_dir) = output_override {
             // Use CLI-provided output directory
-            Path::new(output_dir).join(file_path)
+            Path::new(output_dir).join(&schema_file_rel)
         } else {
             // Use path from macro (relative to source file's directory)
             let source_dir = source_file.parent().unwrap_or(source_root);
-            source_dir.join(file_path)
+            source_dir.join(&schema_file_rel)
         };
 
         // Security check: ensure output path doesn't escape source repository
@@ -251,11 +242,11 @@ fn extract_and_generate_schemas(
         // Check if output path is within source repository
         if !output_canonical.starts_with(source_root) {
             bail!(
-                "Security error in {}:{} - file_path '{}' attempts to write outside source repository. \
+                "Security error in {}:{} - dir_path '{}' attempts to write outside source repository. \
                 Resolved to: {}, but must be within: {}",
                 source_file.display(),
                 struct_name,
-                file_path,
+                dir_path,
                 output_canonical.display(),
                 source_root.display()
             );

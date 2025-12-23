@@ -1,0 +1,5 @@
+error: struct_to_gts_schema: Multiple type generic parameters are not supported (GTS schemas assume nested segments)
+  --> tests/compile_fail/multiple_type_generics.rs:12:12
+   |
+12 | pub struct BaseEvent<P, T> {
+   |            ^^^^^^^^^

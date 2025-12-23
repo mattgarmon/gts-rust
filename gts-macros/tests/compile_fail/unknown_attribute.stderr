@@ -1,5 +1,5 @@
-error: Unknown attribute. Expected: file_path, schema_id, description, or properties
-  --> tests/compile_fail/unknown_attribute.rs:10:5
+error: Unknown attribute. Expected: dir_path, schema_id, description, properties, or base
+  --> tests/compile_fail/unknown_attribute.rs:11:5
    |
-10 |     unknown_key = "some value"
+11 |     unknown_key = "some value"
    |     ^^^^^^^^^^^

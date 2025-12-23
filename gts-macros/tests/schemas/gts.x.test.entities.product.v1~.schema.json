@@ -1,0 +1,30 @@
+{
+  "$id": "gts://gts.x.test.entities.product.v1~",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Product entity with pricing information",
+  "properties": {
+    "description": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string"
+    },
+    "in_stock": {
+      "type": "boolean"
+    },
+    "name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "price",
+    "in_stock"
+  ],
+  "title": "Product",
+  "type": "object"
+}
