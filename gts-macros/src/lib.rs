@@ -407,13 +407,28 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
         .collect();
 
     // Extract struct fields for validation
+    // Allow unit structs (no fields) for nested types that don't add new properties
     let struct_fields = match &input.data {
         Data::Struct(data_struct) => match &data_struct.fields {
-            Fields::Named(fields) => &fields.named,
-            _ => {
+            Fields::Named(fields) => Some(&fields.named),
+            Fields::Unit => {
+                // Unit structs are allowed for nested types with empty properties
+                if !property_names.is_empty() {
+                    return syn::Error::new_spanned(
+                        &input.ident,
+                        "struct_to_gts_schema: Unit struct cannot have properties. \
+                         Either add named fields or use properties = \"\"",
+                    )
+                    .to_compile_error()
+                    .into();
+                }
+                None // No fields to validate
+            }
+            Fields::Unnamed(_) => {
                 return syn::Error::new_spanned(
                     &input.ident,
-                    "struct_to_gts_schema: Only structs with named fields are supported",
+                    "struct_to_gts_schema: Tuple structs are not supported. \
+                     Use a struct with named fields or a unit struct (for empty nested types)",
                 )
                 .to_compile_error()
                 .into()
@@ -429,22 +444,24 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
         }
     };
 
-    // Validate that all requested properties exist
-    let available_fields: Vec<String> = struct_fields
-        .iter()
-        .filter_map(|f| f.ident.as_ref().map(ToString::to_string))
-        .collect();
+    // Validate that all requested properties exist (only for structs with fields)
+    if let Some(fields) = struct_fields {
+        let available_fields: Vec<String> = fields
+            .iter()
+            .filter_map(|f| f.ident.as_ref().map(ToString::to_string))
+            .collect();
 
-    for prop in &property_names {
-        if !available_fields.contains(prop) {
-            return syn::Error::new_spanned(
-                &input.ident,
-                format!(
-                    "struct_to_gts_schema: Property '{prop}' not found in struct. Available fields: {available_fields:?}"
-                ),
-            )
-            .to_compile_error()
-            .into();
+        for prop in &property_names {
+            if !available_fields.contains(prop) {
+                return syn::Error::new_spanned(
+                    &input.ident,
+                    format!(
+                        "struct_to_gts_schema: Property '{prop}' not found in struct. Available fields: {available_fields:?}"
+                    ),
+                )
+                .to_compile_error()
+                .into();
+            }
         }
     }
 
@@ -523,9 +540,9 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
 
     let mut generic_field_name: Option<String> = None;
 
-    // Find the field that uses the generic type
-    if let Some(ref gp) = generic_param_name {
-        for field in struct_fields {
+    // Find the field that uses the generic type (only for structs with fields)
+    if let (Some(ref gp), Some(fields)) = (&generic_param_name, struct_fields) {
+        for field in fields {
             let field_type = &field.ty;
             let field_type_str = quote::quote!(#field_type).to_string().replace(' ', "");
             if field_type_str == *gp {
@@ -833,6 +850,15 @@ pub fn struct_to_gts_schema(attr: TokenStream, item: TokenStream) -> TokenStream
             }
         }
     };
+
+    // Check if this is a unit struct - we need to add an allow attribute for clippy
+    // because quote! may emit {} instead of ; for unit structs
+    let is_unit_struct = matches!(&input.data, Data::Struct(data_struct) if matches!(&data_struct.fields, Fields::Unit));
+    if is_unit_struct {
+        modified_input
+            .attrs
+            .push(syn::parse_quote!(#[allow(clippy::empty_structs_with_brackets)]));
+    }
 
     let expanded = quote! {
         #modified_input
