@@ -79,7 +79,6 @@ impl Default for GtsConfig {
                 "id".to_owned(),
             ],
             schema_id_fields: vec![
-                "$schema".to_owned(),
                 "gtsTid".to_owned(),
                 "gtsType".to_owned(),
                 "gtsT".to_owned(),
@@ -904,7 +903,7 @@ mod tests {
     fn test_gts_config_schema_id_fields() {
         let cfg = GtsConfig::default();
         assert!(cfg.schema_id_fields.contains(&"type".to_owned()));
-        assert!(cfg.schema_id_fields.contains(&"$schema".to_owned()));
+        assert!(cfg.schema_id_fields.contains(&"schema".to_owned()));
         assert!(cfg.schema_id_fields.contains(&"gtsTid".to_owned()));
     }
 

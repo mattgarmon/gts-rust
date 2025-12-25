@@ -3,6 +3,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 use thiserror::Error;
 use uuid::Uuid;
+use schemars::JsonSchema;
 
 pub const GTS_PREFIX: &str = "gts.";
 /// URI-compatible prefix for GTS identifiers in JSON Schema `$id` field (e.g., `gts://gts.x.y.z...`).
@@ -566,6 +567,55 @@ impl AsRef<str> for GtsWildcard {
     }
 }
 
+/// A type-safe wrapper for GTS entity identifiers.
+///
+/// `GtsEntityId` wraps a fully-formed GTS entity ID string (e.g.,
+/// `gts.x.core.events.topic.v1~vendor.app.orders.v1.0`). It can be used as a map key,
+/// compared for equality, hashed, and serialized/deserialized.
+///
+/// # Example
+///
+/// ```
+/// use gts::GtsEntityId;
+///
+/// let id = GtsEntityId::new("gts.x.core.events.type.v1~vendor.app.orders.v1.0~");
+/// assert_eq!(id.as_ref(), "gts.x.core.events.type.v1~vendor.app.orders.v1.0~");
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, JsonSchema)]
+pub struct GtsEntityId(String);
+
+impl GtsEntityId {
+    /// Creates a new GTS entity ID from a string.
+    #[must_use]
+    pub fn new(id: &str) -> Self {
+        Self(id.to_string())
+    }
+
+    /// Returns the underlying string representation of the entity ID.
+    #[must_use]
+    pub fn into_string(self) -> String {
+        self.0
+    }
+}
+
+impl fmt::Display for GtsEntityId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl AsRef<str> for GtsEntityId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl From<GtsEntityId> for String {
+    fn from(id: GtsEntityId) -> Self {
+        id.0
+    }
+}
+
 /// A type-safe wrapper for GTS instance identifiers.
 ///
 /// `GtsInstanceId` wraps a fully-formed GTS instance ID string (e.g.,
@@ -580,8 +630,8 @@ impl AsRef<str> for GtsWildcard {
 /// let id = GtsInstanceId::new("gts.x.core.events.topic.v1~", "vendor.app.orders.v1.0");
 /// assert_eq!(id.as_ref(), "gts.x.core.events.topic.v1~vendor.app.orders.v1.0");
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-pub struct GtsInstanceId(String);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, JsonSchema)]
+pub struct GtsInstanceId(GtsEntityId);
 
 impl GtsInstanceId {
     /// Creates a new GTS instance ID by combining a schema ID with a segment.
@@ -596,13 +646,13 @@ impl GtsInstanceId {
     /// A new `GtsInstanceId` containing the concatenated ID.
     #[must_use]
     pub fn new(schema_id: &str, segment: &str) -> Self {
-        Self(format!("{schema_id}{segment}"))
+        Self(GtsEntityId::new(&format!("{schema_id}{segment}")))
     }
 
     /// Returns the underlying string representation of the instance ID.
     #[must_use]
     pub fn into_string(self) -> String {
-        self.0
+        self.0.into_string()
     }
 }
 
@@ -614,13 +664,13 @@ impl fmt::Display for GtsInstanceId {
 
 impl AsRef<str> for GtsInstanceId {
     fn as_ref(&self) -> &str {
-        &self.0
+        self.0.as_ref()
     }
 }
 
 impl From<GtsInstanceId> for String {
     fn from(id: GtsInstanceId) -> Self {
-        id.0
+        id.0.into()
     }
 }
 
@@ -628,27 +678,111 @@ impl std::ops::Deref for GtsInstanceId {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        self.0.as_ref()
     }
 }
 
 impl PartialEq<str> for GtsInstanceId {
     fn eq(&self, other: &str) -> bool {
-        self.0 == other
+        self.0.as_ref() == other
     }
 }
 
 impl PartialEq<&str> for GtsInstanceId {
     fn eq(&self, other: &&str) -> bool {
-        self.0 == *other
+        self.0.as_ref() == *other
     }
 }
 
 impl PartialEq<String> for GtsInstanceId {
     fn eq(&self, other: &String) -> bool {
-        self.0 == *other
+        self.0.as_ref() == other
     }
 }
+
+/// A type-safe wrapper for GTS schema (type) identifiers.
+///
+/// `GtsSchemaId` wraps a fully-formed GTS schema ID string (e.g.,
+/// `gts.x.core.events.topic.v1~`). It can be used as a map key,
+/// compared for equality, hashed, and serialized/deserialized.
+///
+/// # Example
+///
+/// ```
+/// use gts::GtsSchemaId;
+///
+/// let id = GtsSchemaId::new("gts.x.core.events.topic.v1~vendor.app.orders.v1.0~");
+/// assert_eq!(id.as_ref(), "gts.x.core.events.topic.v1~vendor.app.orders.v1.0~");
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, JsonSchema)]
+pub struct GtsSchemaId(GtsEntityId);
+
+impl GtsSchemaId {
+    /// Creates a new GTS schema ID from string.
+    ///
+    /// # Arguments
+    ///
+    /// * `schema_id` - The GTS schema ID (e.g., `gts.x.core.events.topic.v1~`)
+    ///
+    /// # Returns
+    ///
+    /// A new `GtsSchemaId` containing the concatenated ID.
+    #[must_use]
+    pub fn new(schema_id: &str) -> Self {
+        Self(GtsEntityId::new(&format!("{schema_id}")))
+    }
+
+    /// Returns the underlying string representation of the schema ID.
+    #[must_use]
+    pub fn into_string(self) -> String {
+        self.0.into_string()
+    }
+}
+
+impl fmt::Display for GtsSchemaId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl AsRef<str> for GtsSchemaId {
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl From<GtsSchemaId> for String {
+    fn from(id: GtsSchemaId) -> Self {
+        id.0.into()
+    }
+}
+
+impl std::ops::Deref for GtsSchemaId {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref()
+    }
+}
+
+impl PartialEq<str> for GtsSchemaId {
+    fn eq(&self, other: &str) -> bool {
+        self.0.as_ref() == other
+    }
+}
+
+impl PartialEq<&str> for GtsSchemaId {
+    fn eq(&self, other: &&str) -> bool {
+        self.0.as_ref() == *other
+    }
+}
+
+impl PartialEq<String> for GtsSchemaId {
+    fn eq(&self, other: &String) -> bool {
+        self.0.as_ref() == other
+    }
+}
+
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
