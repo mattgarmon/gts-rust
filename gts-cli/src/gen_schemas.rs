@@ -470,6 +470,9 @@ fn derive_parent_schema_id(schema_id: &str) -> String {
 
 /// Convert Rust type string to JSON Schema type
 /// Returns (`is_required`, `json_schema_value`)
+///
+/// This function inlines the actual schema definitions for GTS types (like `GtsInstanceId`)
+/// to match what schemars generates, including custom extensions like `x-gts-ref`.
 fn rust_type_to_json_schema(rust_type: &str) -> (bool, serde_json::Value) {
     use serde_json::json;
 
@@ -510,11 +513,27 @@ fn rust_type_to_json_schema(rust_type: &str) -> (bool, serde_json::Value) {
         t if t.contains("Uuid") || t.contains("uuid") => {
             json!({ "type": "string", "format": "uuid" })
         }
+        // GtsInstanceId - inline the full schema with x-gts-ref extension
+        // This matches the schemars::JsonSchema implementation in gts/src/gts.rs
         "GtsInstanceId" => {
-            json!({ "$ref": "#/definitions/GtsInstanceId" })
+            json!({
+                "type": "string",
+                "format": "gts-instance-id",
+                "title": "GTS Instance ID",
+                "description": "GTS instance identifier",
+                "x-gts-ref": "gts.*"
+            })
         }
+        // GtsSchemaId - inline the full schema with x-gts-ref extension
+        // This matches the schemars::JsonSchema implementation in gts/src/gts.rs
         "GtsSchemaId" => {
-            json!({ "$ref": "#/definitions/GtsSchemaId" })
+            json!({
+                "type": "string",
+                "format": "gts-schema-id",
+                "title": "GTS Schema ID",
+                "description": "GTS schema identifier",
+                "x-gts-ref": "gts.*"
+            })
         }
         // Generic type parameter (e.g., P, T, etc.) - treat as object
         t if t.len() <= 2 && t.chars().all(|c| c.is_ascii_uppercase()) => {
@@ -661,10 +680,12 @@ mod tests {
         assert_eq!(schema["type"], "array");
         assert_eq!(schema["items"]["type"], "string");
 
-        // GTS types
+        // GTS types - now inlined with x-gts-ref extension
         let (req, schema) = rust_type_to_json_schema("GtsInstanceId");
         assert!(req);
-        assert_eq!(schema["$ref"], "#/definitions/GtsInstanceId");
+        assert_eq!(schema["type"], "string");
+        assert_eq!(schema["format"], "gts-instance-id");
+        assert_eq!(schema["x-gts-ref"], "gts.*");
 
         // Generic type parameter
         let (req, schema) = rust_type_to_json_schema("P");
