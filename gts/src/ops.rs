@@ -494,8 +494,30 @@ impl GtsOps {
 
     #[must_use]
     pub fn match_id_pattern(&self, candidate: &str, pattern: &str) -> GtsIdMatchResult {
-        match (GtsID::new(candidate), GtsWildcard::new(pattern)) {
-            (Ok(c), Ok(p)) => {
+        // Both candidate and pattern can be either valid GTS ID or valid wildcard
+        // Try to parse both as GtsID or GtsWildcard
+        let candidate_result = if candidate.contains('*') {
+            GtsWildcard::new(candidate).map(|w| (w.id.clone(), w.gts_id_segments))
+        } else {
+            GtsID::new(candidate).map(|g| (g.id.clone(), g.gts_id_segments))
+        };
+
+        let pattern_result = if pattern.contains('*') {
+            GtsWildcard::new(pattern).map(|w| (w.id.clone(), w.gts_id_segments))
+        } else {
+            GtsID::new(pattern).map(|g| (g.id.clone(), g.gts_id_segments))
+        };
+
+        match (candidate_result, pattern_result) {
+            (Ok((c_id, c_segments)), Ok((p_id, p_segments))) => {
+                let c = GtsID {
+                    id: c_id,
+                    gts_id_segments: c_segments,
+                };
+                let p = GtsWildcard {
+                    id: p_id,
+                    gts_id_segments: p_segments,
+                };
                 let is_match = c.wildcard_match(&p);
                 GtsIdMatchResult {
                     candidate: candidate.to_owned(),
@@ -504,11 +526,17 @@ impl GtsOps {
                     error: String::new(),
                 }
             }
-            (Err(e), _) | (_, Err(e)) => GtsIdMatchResult {
+            (Err(e), _) => GtsIdMatchResult {
                 candidate: candidate.to_owned(),
                 pattern: pattern.to_owned(),
                 is_match: false,
-                error: e.to_string(),
+                error: format!("Invalid candidate: {e}"),
+            },
+            (_, Err(e)) => GtsIdMatchResult {
+                candidate: candidate.to_owned(),
+                pattern: pattern.to_owned(),
+                is_match: false,
+                error: format!("Invalid pattern: {e}"),
             },
         }
     }
@@ -2974,7 +3002,10 @@ mod tests {
         });
 
         let result = ops.add_entity(&content, false);
-        assert!(!result.ok, "Schema with plain gts. prefix in $id should fail");
+        assert!(
+            !result.ok,
+            "Schema with plain gts. prefix in $id should fail"
+        );
         assert!(
             result.error.contains("Unable to detect GTS ID"),
             "Error should mention missing GTS ID, got: {}",
@@ -3018,7 +3049,11 @@ mod tests {
         });
 
         let result = ops.add_entity(&content, false);
-        assert!(result.ok, "Schema with gts:// URI prefix should succeed, got error: {}", result.error);
+        assert!(
+            result.ok,
+            "Schema with gts:// URI prefix should succeed, got error: {}",
+            result.error
+        );
         assert_eq!(result.id, "gts.x.test6.valid_id.with_uri.v1~");
         assert!(result.is_schema);
     }
