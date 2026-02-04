@@ -1,8 +1,8 @@
-error: struct_to_gts_schema: Struct 'BaseEventV1' has version suffix 'V1' but cannot extract version from schema_id 'gts.x.core.events.type~'. Expected format with version like 'gts.x.foo.v1~' or 'gts.x.foo.v1.0~'
-  --> tests/compile_fail/version_missing_in_schema.rs:14:12
+error: struct_to_gts_schema: Segment #1: Too few tokens (got 4, min 5). Expected format: vendor.package.namespace.type.vMAJOR[.MINOR]
+  --> tests/compile_fail/version_missing_in_schema.rs:10:17
    |
-14 | pub struct BaseEventV1 {
-   |            ^^^^^^^^^^^
+10 |     schema_id = "gts.x.core.events.type~",
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 warning: unused import: `gts::GtsInstanceId`
  --> tests/compile_fail/version_missing_in_schema.rs:4:5
