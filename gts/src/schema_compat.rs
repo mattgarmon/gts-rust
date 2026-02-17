@@ -165,31 +165,34 @@ fn compare_property_constraints(
 
     // `const` and `enum` are "value-enumerating" constraints that fully specify the
     // set of allowed values.  When the derived schema introduces one of these, omitting
-    // bounds-type keywords (maxLength, minimum, …) or pattern is NOT loosening because
-    // the allowed values are already a finite, explicit set.
-    let derived_has_const = derived_map.contains_key("const");
-    let derived_has_enum = derived_map.contains_key("enum");
-    let derived_enumerates_values = derived_has_const || derived_has_enum;
+    // bounds-type keywords (maxLength, minimum, ...) or pattern is NOT loosening because
+    // the allowed values are already a finite, explicit set.  However, the enumerated
+    // values themselves must still satisfy the base bounds.
+    let derived_values = collect_derived_enumerated_values(derived_map);
+    let derived_enumerates_values = derived_values.is_some();
 
     // const: if base has const, derived must have same const (not omit it).
     // Exception: derived may replace const with enum that includes the const value
     // (still tighter or equal).
     check_const_compatibility(base_map, derived_map, prop_name, errors);
 
-    // pattern: if base has pattern, derived must keep it — unless derived enumerates values
-    if !derived_enumerates_values {
+    if derived_enumerates_values {
+        // Derived enumerates values: skip keyword-level bounds/pattern checks but
+        // verify every enumerated value satisfies the base constraints.
+        check_enumerated_values_against_base(
+            base_map,
+            derived_values.as_deref().unwrap_or(&[]),
+            prop_name,
+            errors,
+        );
+    } else {
+        // No enumeration: require keyword-level constraints to be preserved/tightened.
         check_pattern_compatibility(base_map, derived_map, prop_name, errors);
-    }
 
-    // Upper bounds: derived must be <= base — unless derived enumerates values
-    if !derived_enumerates_values {
         check_upper_bound(base_map, derived_map, "maxLength", prop_name, errors);
         check_upper_bound(base_map, derived_map, "maximum", prop_name, errors);
         check_upper_bound(base_map, derived_map, "maxItems", prop_name, errors);
-    }
 
-    // Lower bounds: derived must be >= base — unless derived enumerates values
-    if !derived_enumerates_values {
         check_lower_bound(base_map, derived_map, "minLength", prop_name, errors);
         check_lower_bound(base_map, derived_map, "minimum", prop_name, errors);
         check_lower_bound(base_map, derived_map, "minItems", prop_name, errors);
@@ -442,6 +445,74 @@ fn check_lower_bound(
             }
         }
     }
+}
+
+/// Collect the concrete values that a derived property constrains to via `const` or `enum`.
+/// Returns `None` if the derived schema uses neither keyword.
+fn collect_derived_enumerated_values(
+    derived_map: &serde_json::Map<String, Value>,
+) -> Option<Vec<Value>> {
+    if let Some(c) = derived_map.get("const") {
+        return Some(vec![c.clone()]);
+    }
+    if let Some(Value::Array(arr)) = derived_map.get("enum") {
+        return Some(arr.clone());
+    }
+    None
+}
+
+/// When the derived schema enumerates values (via `const` or `enum`), verify that
+/// every enumerated value satisfies the base bounds and pattern constraints.
+/// This replaces the keyword-level checks: instead of requiring the keywords to
+/// be preserved, we verify the actual values are within the allowed range.
+fn check_enumerated_values_against_base(
+    base_map: &serde_json::Map<String, Value>,
+    values: &[Value],
+    prop_name: &str,
+    errors: &mut Vec<String>,
+) {
+    // Check numeric lower bounds (minimum, minLength, minItems)
+    for keyword in &["minimum", "minLength", "minItems"] {
+        if let Some(base_val) = base_map.get(*keyword).and_then(|v| v.as_f64()) {
+            for val in values {
+                let numeric = match keyword {
+                    &"minLength" => val.as_str().map(|s| s.len() as f64),
+                    &"minItems" => val.as_array().map(|a| a.len() as f64),
+                    _ => val.as_f64(),
+                };
+                if let Some(n) = numeric {
+                    if n < base_val {
+                        errors.push(format!(
+                            "property '{prop_name}': derived const/enum value {val} violates \
+                             base {keyword} ({base_val})"
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
+    // Check numeric upper bounds (maximum, maxLength, maxItems)
+    for keyword in &["maximum", "maxLength", "maxItems"] {
+        if let Some(base_val) = base_map.get(*keyword).and_then(|v| v.as_f64()) {
+            for val in values {
+                let numeric = match keyword {
+                    &"maxLength" => val.as_str().map(|s| s.len() as f64),
+                    &"maxItems" => val.as_array().map(|a| a.len() as f64),
+                    _ => val.as_f64(),
+                };
+                if let Some(n) = numeric {
+                    if n > base_val {
+                        errors.push(format!(
+                            "property '{prop_name}': derived const/enum value {val} violates \
+                             base {keyword} ({base_val})"
+                        ));
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -866,5 +937,104 @@ mod tests {
         }));
         let errs = validate_schema_compatibility(&base, &derived_bad, "b", "d");
         assert!(!errs.is_empty(), "const NOT in base enum should fail");
+    }
+
+    #[test]
+    fn test_const_violates_minimum() {
+        // Base has minimum 42, derived sets const 32 — must fail.
+        let base = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "minimum": 42}
+            }
+        }));
+        let derived = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "const": 32}
+            }
+        }));
+        let errs = validate_schema_compatibility(&base, &derived, "base~", "derived~");
+        assert!(!errs.is_empty(), "const 32 < minimum 42 should fail: {errs:?}");
+        assert!(
+            errs.iter().any(|e| e.contains("violates") && e.contains("minimum")),
+            "error should mention minimum violation: {errs:?}"
+        );
+    }
+
+    #[test]
+    fn test_const_satisfies_minimum() {
+        // Base has minimum 42, derived sets const 50 — should pass.
+        let base = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "minimum": 42}
+            }
+        }));
+        let derived = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "const": 50}
+            }
+        }));
+        let errs = validate_schema_compatibility(&base, &derived, "base~", "derived~");
+        assert!(errs.is_empty(), "const 50 >= minimum 42 should pass: {errs:?}");
+    }
+
+    #[test]
+    fn test_enum_value_violates_maximum() {
+        // Base has maximum 100, derived enum includes 200 — must fail.
+        let base = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "maximum": 100}
+            }
+        }));
+        let derived = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "enum": [10, 50, 200]}
+            }
+        }));
+        let errs = validate_schema_compatibility(&base, &derived, "base~", "derived~");
+        assert!(!errs.is_empty(), "enum value 200 > maximum 100 should fail: {errs:?}");
+    }
+
+    #[test]
+    fn test_enum_values_within_bounds() {
+        // Base has minimum 10 and maximum 100, all enum values within range — should pass.
+        let base = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "minimum": 10, "maximum": 100}
+            }
+        }));
+        let derived = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "score": {"type": "integer", "enum": [10, 50, 100]}
+            }
+        }));
+        let errs = validate_schema_compatibility(&base, &derived, "base~", "derived~");
+        assert!(errs.is_empty(), "all enum values in range should pass: {errs:?}");
+    }
+
+    #[test]
+    fn test_const_string_violates_max_length() {
+        // Base has maxLength 5, derived const is "toolong" (7 chars) — must fail.
+        let base = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "maxLength": 5}
+            }
+        }));
+        let derived = extract_effective_schema(&json!({
+            "type": "object",
+            "properties": {
+                "code": {"type": "string", "const": "toolong"}
+            }
+        }));
+        let errs = validate_schema_compatibility(&base, &derived, "base~", "derived~");
+        assert!(!errs.is_empty(), "const 'toolong' exceeds maxLength 5: {errs:?}");
     }
 }
