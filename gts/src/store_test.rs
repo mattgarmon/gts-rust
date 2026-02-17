@@ -3748,15 +3748,14 @@ fn test_op13_traits_all_resolved_passes() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.tr.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.tr.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.tr.base.v1~x.test13._.leaf.v1~");
-    assert!(result.is_ok(), "All traits resolved should pass: {result:?}");
+    let result = store.validate_schema_traits("gts.x.test13.tr.base.v1~x.test13._.leaf.v1~");
+    assert!(
+        result.is_ok(),
+        "All traits resolved should pass: {result:?}"
+    );
 }
 
 #[test]
@@ -3790,14 +3789,10 @@ fn test_op13_traits_defaults_fill_passes() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.dfl.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.dfl.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.dfl.base.v1~x.test13._.leaf.v1~");
+    let result = store.validate_schema_traits("gts.x.test13.dfl.base.v1~x.test13._.leaf.v1~");
     assert!(result.is_ok(), "Defaults should fill traits: {result:?}");
 }
 
@@ -3835,14 +3830,10 @@ fn test_op13_traits_missing_required_fails() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.mis.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.mis.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.mis.base.v1~x.test13._.leaf.v1~");
+    let result = store.validate_schema_traits("gts.x.test13.mis.base.v1~x.test13._.leaf.v1~");
     assert!(result.is_err(), "Missing topicRef should fail");
 }
 
@@ -3879,14 +3870,10 @@ fn test_op13_traits_wrong_type_fails() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.wt.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.wt.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.wt.base.v1~x.test13._.leaf.v1~");
+    let result = store.validate_schema_traits("gts.x.test13.wt.base.v1~x.test13._.leaf.v1~");
     assert!(result.is_err(), "Wrong type should fail");
 }
 
@@ -3914,15 +3901,14 @@ fn test_op13_traits_no_traits_schema_passes() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.nt.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.nt.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.nt.base.v1~x.test13._.leaf.v1~");
-    assert!(result.is_ok(), "No traits schema means nothing to validate: {result:?}");
+    let result = store.validate_schema_traits("gts.x.test13.nt.base.v1~x.test13._.leaf.v1~");
+    assert!(
+        result.is_ok(),
+        "No traits schema means nothing to validate: {result:?}"
+    );
 }
 
 #[test]
@@ -3989,14 +3975,10 @@ fn test_op13_traits_ref_based_trait_schema() {
         ]
     });
     store
-        .register_schema(
-            "gts.x.test13.ref.base.v1~x.test13._.leaf.v1~",
-            &derived,
-        )
+        .register_schema("gts.x.test13.ref.base.v1~x.test13._.leaf.v1~", &derived)
         .expect("register derived");
 
-    let result =
-        store.validate_schema_traits("gts.x.test13.ref.base.v1~x.test13._.leaf.v1~");
+    let result = store.validate_schema_traits("gts.x.test13.ref.base.v1~x.test13._.leaf.v1~");
     assert!(
         result.is_ok(),
         "$ref trait schemas should resolve and validate: {result:?}"

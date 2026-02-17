@@ -27,8 +27,9 @@ use serde_json::Value;
 /// integration uses [`validate_effective_traits`] directly after collecting
 /// and resolving trait schemas itself.
 ///
-/// Returns `Ok(())` when traits are valid, or `Err(errors)` with one or more
-/// human-readable error strings.
+/// # Errors
+/// Returns `Vec<String>` of error messages if trait values don't conform to the
+/// effective trait schema or if traits are provided without trait schema.
 #[cfg(test)]
 pub fn validate_traits_chain(chain_schemas: &[(String, Value)]) -> Result<(), Vec<String>> {
     let mut trait_schemas = Vec::new();
@@ -48,15 +49,15 @@ pub fn validate_traits_chain(chain_schemas: &[(String, Value)]) -> Result<(), Ve
 ///
 /// `merged_traits` – shallow-merged `x-gts-traits` values (rightmost wins).
 ///
-/// Returns `Ok(())` when valid, or `Err(errors)`.
+/// # Errors
+/// Returns `Vec<String>` of error messages if trait values don't conform to the
+/// effective trait schema, if required traits are missing, or if traits exist
+/// without a trait schema in the chain.
 pub fn validate_effective_traits(
     resolved_trait_schemas: &[Value],
     merged_traits: &Value,
 ) -> Result<(), Vec<String>> {
-    let has_trait_values = merged_traits
-        .as_object()
-        .map(|m| !m.is_empty())
-        .unwrap_or(false);
+    let has_trait_values = merged_traits.as_object().is_some_and(|m| !m.is_empty());
 
     if resolved_trait_schemas.is_empty() {
         if has_trait_values {
@@ -147,13 +148,10 @@ fn apply_defaults(trait_schema: &Value, traits: &Value) -> Value {
     let props = collect_all_properties(trait_schema);
 
     for (prop_name, prop_schema) in &props {
-        if !result.contains_key(prop_name.as_str()) {
-            if let Some(default_val) = prop_schema
-                .as_object()
-                .and_then(|m| m.get("default"))
-            {
-                result.insert(prop_name.clone(), default_val.clone());
-            }
+        if !result.contains_key(prop_name.as_str())
+            && let Some(default_val) = prop_schema.as_object().and_then(|m| m.get("default"))
+        {
+            result.insert(prop_name.clone(), default_val.clone());
         }
     }
 
@@ -221,14 +219,11 @@ fn validate_traits_against_schema(
     let traits_obj = effective_traits.as_object();
 
     for (prop_name, prop_schema) in &all_props {
-        let has_value = traits_obj
-            .map(|m| m.contains_key(prop_name.as_str()))
-            .unwrap_or(false);
+        let has_value = traits_obj.is_some_and(|m| m.contains_key(prop_name.as_str()));
 
         let has_default = prop_schema
             .as_object()
-            .map(|m| m.contains_key("default"))
-            .unwrap_or(false);
+            .is_some_and(|m| m.contains_key("default"));
 
         if !has_value && !has_default {
             errors.push(format!(
@@ -444,7 +439,8 @@ mod tests {
         ];
         let err = validate_traits_chain(&chain).unwrap_err();
         assert!(
-            err.iter().any(|e| e.contains("additional") || e.contains("unknownTrait")),
+            err.iter()
+                .any(|e| e.contains("additional") || e.contains("unknownTrait")),
             "unknown property should fail: {err:?}"
         );
     }

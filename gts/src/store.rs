@@ -729,14 +729,15 @@ impl GtsStore {
 
         // Delegate to the schema_traits module
         let merged = serde_json::Value::Object(merged_traits);
-        crate::schema_traits::validate_effective_traits(&resolved_trait_schemas, &merged)
-            .map_err(|errors| {
+        crate::schema_traits::validate_effective_traits(&resolved_trait_schemas, &merged).map_err(
+            |errors| {
                 StoreError::ValidationError(format!(
                     "Schema '{}' trait validation failed: {}",
                     gts_id,
                     errors.join("; ")
                 ))
-            })
+            },
+        )
     }
 
     /// Validates an instance against its schema.
